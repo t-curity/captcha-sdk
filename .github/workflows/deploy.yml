@@ -2,7 +2,7 @@ name: Build & Deploy SDK
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
 
 permissions:
   contents: read
