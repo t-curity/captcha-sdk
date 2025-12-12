@@ -2,7 +2,7 @@ let inFlight: Promise<{ session_id: string }> | null = null;
 
 declare global {
   interface Window {
-    Tcurity?: {
+    TCuritySDK?: {
       captcha: (clientId: string) => Promise<{ session_id: string }>;
     };
   }
@@ -37,7 +37,7 @@ async function captcha(clientId: string): Promise<{ session_id: string }> {
 }
 
 // 🌍 글로벌 노출 (UMD 스타일)
-window.Tcurity = {
+window.TCuritySDK = {
   captcha,
 };
 
