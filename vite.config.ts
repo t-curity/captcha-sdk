@@ -5,7 +5,7 @@ export default defineConfig({
     lib: {
       entry: "src/index.ts",
       name: "TCuritySDK",
-      fileName: () => "captcha.js",
+      fileName: () => "sdk.js",
       formats: ["umd"],
     },
     minify: "terser",
