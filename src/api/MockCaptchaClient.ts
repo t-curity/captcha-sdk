@@ -97,7 +97,11 @@ export class MockCaptchaClient implements CaptchaClient {
   private phaseA(): PhaseAProblem {
     return {
       image: this.loader.ticket(),
-      cut_rectangle: [40, 0, 10, 40],
+      guide_line: {
+        start: [0.7, 0],
+        end: [0.7, 1],
+        width: 0.06,
+      },
       guide_text: "절취선을 따라 선을 그려주세요",
       time_limit: 30,
     };
