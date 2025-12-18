@@ -5,7 +5,7 @@ import type {
   PhaseAProblem,
   PhaseBProblem,
   Answer,
-} from "./captcha.types";
+} from "../types/contracts/captcha.types";
 import type { CaptchaClient } from "./CaptchaClient";
 import { MockImageLoader } from "@/mock/MockImageLoader";
 

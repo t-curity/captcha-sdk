@@ -1,16 +1,17 @@
 import { CaptchaController } from "@/core/CaptchaController";
+import type { ClientID, SessionID } from "./types/contracts/primitives";
 
 declare global {
   interface Window {
     TCuritySDK?: {
-      captcha: (clientId: string) => Promise<string>;
+      captcha: (clientId: ClientID) => Promise<SessionID>;
     };
   }
 }
 
 const controller = new CaptchaController();
 
-async function captcha(clientId: string): Promise<string> {
+async function captcha(clientId: ClientID): Promise<SessionID> {
   return controller.run(clientId);
 }
 

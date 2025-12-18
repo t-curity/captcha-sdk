@@ -1,7 +1,7 @@
-import { CaptchaClient } from "./CaptchaClient";
-import { MockCaptchaClient } from "./MockCaptchaClient";
-import { HttpCaptchaClient } from "./HttpCaptchaClient";
-import { getEnv } from "../config/captcha.env";
+import { CaptchaClient } from "./api/CaptchaClient";
+import { MockCaptchaClient } from "./api/MockCaptchaClient";
+import { HttpCaptchaClient } from "./api/HttpCaptchaClient";
+import { getEnv } from "./config/captcha.env";
 
 export function createCaptchaClient(): CaptchaClient {
   const env = getEnv();

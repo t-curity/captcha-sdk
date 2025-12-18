@@ -1,36 +1,17 @@
-import { createCaptchaClient } from "@/api/createCaptchaClient";
+import { createCaptchaClient } from "@/createCaptchaClient";
 import { showOverlay, hideOverlay } from "@/ui/overlay";
+import type { SessionID } from "@/types/contracts/primitives";
 import type {
-  SessionID,
-  CaptchaResponse,
   CaptchaPayload,
-  PhaseAProblem,
-  TracePoint,
-} from "@/api/captcha.types";
-import { PhaseAResult } from "@/ui/contracts";
+  InitResponse,
+  SubmitResponse,
+} from "@/types/contracts/protocol";
+import type { PhaseAProblem } from "@/types/contracts/problems";
+import { PhaseAResult } from "@/types/contracts/phase-results";
 import { renderPhaseA } from "@/ui/phaseA";
-import { StrokePoint } from "@/stroke/StrokeModel";
-
-class UserCancelledError extends Error {
-  code = "USER_CANCELLED" as const;
-  constructor() {
-    super("USER_CANCELLED");
-  }
-}
-
-function StrokeToTracePoint(stroke: StrokePoint[]): TracePoint[] {
-  return stroke.map((p) => [p.x, p.y, p.t, p.event_type]);
-}
-
-function mapPhaseAToPayload(result: PhaseAResult): CaptchaPayload {
-  if (result.cancelled) {
-    throw new UserCancelledError();
-  }
-
-  return {
-    behavior_pattern_data: StrokeToTracePoint(result.strokes),
-  };
-}
+import { createDeviceMetadata } from "@/utils/device-metadata";
+import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
+import { UserCancelledError } from "./error/UserCancelledError";
 
 export class CaptchaController {
   private inFlight: Promise<SessionID> | null = null;
@@ -57,67 +38,80 @@ export class CaptchaController {
 
     showOverlay();
 
-    let cancelled = false;
-
     try {
-      // 1️⃣ INIT
-      let res: CaptchaResponse = await client.init(clientId);
+      // Init
+      const init_response: InitResponse = await client.init(clientId);
 
-      if (res.status !== "INIT") {
+      if (!init_response.success) {
+        throw new Error(init_response.error ?? "INIT_FAILED");
+      }
+
+      if (init_response.status !== "INIT") {
         throw new Error("INVALID_STATE");
       }
 
-      const session_id = res.data?.session_id;
+      const session_id = init_response.data.session_id;
 
-      // 2️⃣ 서버 주도 상태 머신
+      // Request
+      let request_response = await client.request(session_id);
+
+      if (!request_response.success) {
+        throw new Error(request_response.error ?? "REQUEST_FAILED");
+      }
+
+      // PHASE_A setting
+      let res: SubmitResponse = request_response;
+
+      // 문제 풀이 시작
       while (true) {
-        if (cancelled) {
-          throw new UserCancelledError();
+        if (!res.success) {
+          throw new Error(res.error ?? "REQUEST_FAILED");
         }
 
         console.log(res);
 
         switch (res.status) {
-          case "INIT": {
-            res = await client.request(session_id!);
-            continue;
-          }
           case "PHASE_A": {
-            const problem = res.data?.problem as PhaseAProblem;
-            const uiResult: PhaseAResult = await renderPhaseA(
-              problem.image,
-              problem.guide_line,
-            );
+            const { problem } = res.data;
+            const result: PhaseAResult = await renderPhaseA(problem);
 
-            const payload = mapPhaseAToPayload(uiResult);
+            if (result.cancelled) {
+              throw new UserCancelledError();
+            }
+
+            const payload = mapPhaseAToPayload(result.raw_points);
 
             console.log("PHASE_A", payload);
 
-            res = await client.submit(session_id!, payload);
+            res = await client.submit(session_id, payload);
             continue;
           }
           case "PHASE_B": {
+            const { problem } = res.data;
+            // PHASE_B UI render
             const payload: CaptchaPayload = {
-              behavior_pattern_data: [],
+              points: [],
               user_answer: [
                 "n02088364_2158",
                 "n02088364_2160",
                 "n02105641_1945",
                 "n02105641_4815",
               ],
+              metadata: createDeviceMetadata(),
             };
 
-            res = await client.submit(session_id!, payload);
+            res = await client.submit(session_id, payload);
             continue;
           }
           case "COMPLETED": {
-            return session_id!;
+            return session_id;
           }
           default:
             throw new Error("INVALID_STATE");
         }
       }
     } catch (e: any) {
+      console.log(e);
       if (e?.code === "USER_CANCELLED") throw e;
       throw new Error("AUTH_FAILED");
     } finally {

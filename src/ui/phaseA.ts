@@ -1,16 +1,19 @@
 import { getOverlayRoot } from "@/ui/overlay";
-import { GuideLine, TracePoint } from "@/api/captcha.types";
-import { StrokePoint } from "@/stroke/StrokeModel";
-import { PhaseAResult } from "@/ui/contracts";
+import type { GuideLine, PhaseAProblem } from "@/types/contracts/problems";
+import { RawPointerEvent } from "@/types/input-event/RawPointerEventModel";
+import { AbortReason, PhaseAResult } from "@/types/contracts/phase-results";
 
 const COLOR_DRAW = "#000";
 const COLOR_PASS = "rgba(0,200,0,0.9)";
 const COLOR_FAIL = "rgba(255,60,60,0.9)";
 
-export function renderPhaseA(
-  image_src: string,
-  guide_line: GuideLine,
-): Promise<PhaseAResult> {
+export function renderPhaseA({
+  guide_line,
+  guide_text,
+  image,
+  phase,
+  time_limit,
+}: PhaseAProblem): Promise<PhaseAResult> {
   return new Promise((resolve) => {
     console.log(guide_line);
     const root = getOverlayRoot();
@@ -22,18 +25,67 @@ export function renderPhaseA(
           background: #fff;
           padding: 16px;
           border-radius: 8px;
+          // padding-top: 36px;
+        }
+        .slot {
+          position: relative;
+          display: inline-block;
+        }
+        .phase {
+          width: 100%;
+          margin-bottom: 12px;
+        }
+        .phase-bars {
+          display: flex;
+          gap: 6px;
+          width: 100%;
+        }
+        .phase-bar {
+          flex: 1;
+          height: 6px;
+          background: #e0e0e0; /* 회색 */
+          border-radius: 3px;
+        }
+        .phase-bar.active {
+          background: #1976d2; /* 파랑 */
+        }
+        .guide_text {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 8px;
         }
       </style>
-      <div class="phase-a"></div>
+      <div class="phase-a">
+        <div class="phase">
+          <div class="phase-bars">
+            <div class="phase-bar active"></div>
+            <div class="phase-bar"></div>
+          </div></div>
+        <div class="slot"></div>
+        <div class="guide_text">${guide_text}</div>
+      </div>
     `;
+
+    // const closeBtn = document.createElement("button");
+    // closeBtn.textContent = "×";
+    // closeBtn.style.position = "absolute";
+    // closeBtn.style.top = "8px";
+    // closeBtn.style.right = "8px";
+    // closeBtn.style.border = "none";
+    // closeBtn.style.background = "transparent";
+    // closeBtn.style.fontSize = "20px";
+    // closeBtn.style.cursor = "pointer";
+    // closeBtn.style.lineHeight = "1";
+    // container.style.position = "relative";
+    // container.appendChild(closeBtn);
+
     root.appendChild(container);
 
-    const slot = document.createElement("div");
-    slot.style.position = "relative";
-    slot.style.display = "inline-block";
+    const slot = container.querySelector(".phase-a .slot") as HTMLDivElement;
 
     const img = document.createElement("img");
-    img.src = `data:image/png;base64,${image_src}`;
+    img.src = `data:image/png;base64,${image}`;
     img.style.display = "block";
     img.style.maxWidth = "480px";
     img.style.userSelect = "none";
@@ -48,21 +100,23 @@ export function renderPhaseA(
 
     slot.appendChild(img);
     slot.appendChild(canvas);
-    container.querySelector(".phase-a")!.appendChild(slot);
 
     const ctx = canvas.getContext("2d")!;
     ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    img.onload = () => {
-      const r = img.getBoundingClientRect();
-      canvas.width = r.width;
-      canvas.height = r.height;
-      canvas.style.width = `${r.width}px`;
-      canvas.style.height = `${r.height}px`;
+    let imgRect: DOMRect;
 
-      renderGuideLine(r);
+    img.onload = () => {
+      imgRect = img.getBoundingClientRect();
+
+      canvas.width = imgRect.width;
+      canvas.height = imgRect.height;
+      canvas.style.width = `${imgRect.width}px`;
+      canvas.style.height = `${imgRect.height}px`;
+
+      // renderGuideLine(imgRect);
     };
 
     function renderGuideLine(rect: DOMRect) {
@@ -104,7 +158,7 @@ export function renderPhaseA(
       slot.appendChild(center);
     }
 
-    let stroke: StrokePoint[] = [];
+    let raw_points: RawPointerEvent[] = [];
     let isPressed = false;
     let activePointerId: number | null = null;
 
@@ -149,49 +203,42 @@ export function renderPhaseA(
       ctx.strokeStyle = color;
 
       let prev: { x: number; y: number } | null = null;
-      const r = img.getBoundingClientRect();
 
-      for (const p of stroke) {
-        // 🔥 move_out도 그린다
+      for (const p of raw_points) {
         if (p.event_type !== "move" && p.event_type !== "move_out") {
           prev = null;
           continue;
         }
 
-        const x = p.x * r.width;
-        const y = p.y * r.height;
-
         if (prev) {
           ctx.beginPath();
           ctx.moveTo(prev.x, prev.y);
-          ctx.lineTo(x, y);
+          ctx.lineTo(p.img_x, p.img_y);
           ctx.stroke();
         }
 
-        prev = { x, y };
+        prev = { x: p.img_x, y: p.img_y };
       }
     }
 
-    /* =========================
-     * Pointer Events
-     * ========================= */
     slot.addEventListener("pointerdown", (e) => {
       if (activePointerId !== null) return;
 
-      stroke = [];
+      raw_points = [];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       activePointerId = e.pointerId;
       isPressed = true;
       slot.setPointerCapture(e.pointerId);
 
-      const r = img.getBoundingClientRect();
-      const px = e.clientX - r.left;
-      const py = e.clientY - r.top;
+      const img_x = e.clientX - imgRect.left;
+      const img_y = e.clientY - imgRect.top;
 
-      stroke.push({
-        x: Math.min(Math.max(px / r.width, 0), 1),
-        y: Math.min(Math.max(py / r.height, 0), 1),
+      raw_points.push({
+        img_x,
+        img_y,
+        viewport_x: e.clientX / window.innerWidth,
+        viewport_y: e.clientY / window.innerHeight,
         t: Date.now(),
         event_type: "down",
       });
@@ -200,59 +247,55 @@ export function renderPhaseA(
     slot.addEventListener("pointermove", (e) => {
       if (!isPressed || e.pointerId !== activePointerId) return;
 
-      const r = img.getBoundingClientRect();
-      const px = e.clientX - r.left;
-      const py = e.clientY - r.top;
+      const img_x = e.clientX - imgRect.left;
+      const img_y = e.clientY - imgRect.top;
 
-      const x = Math.min(Math.max(px / r.width, 0), 1);
-      const y = Math.min(Math.max(py / r.height, 0), 1);
+      const insideGuide = isInsideGuideLinePx(img_x, img_y, imgRect);
 
-      const insideGuide = isInsideGuideLinePx(px, py, r);
-
-      stroke.push({
-        x,
-        y,
+      raw_points.push({
+        img_x,
+        img_y,
+        viewport_x: e.clientX / window.innerWidth,
+        viewport_y: e.clientY / window.innerHeight,
         t: Date.now(),
         event_type: insideGuide ? "move" : "move_out",
       });
 
-      // 🔥 항상 그린다
       drawStroke(COLOR_DRAW);
     });
 
     slot.addEventListener("pointerup", (e) => {
       if (e.pointerId !== activePointerId) return;
 
-      // up 기록
-      stroke.push({
-        x: stroke[stroke.length - 1]?.x ?? 0,
-        y: stroke[stroke.length - 1]?.y ?? 0,
+      const last = raw_points[raw_points.length - 1];
+
+      raw_points.push({
+        img_x: last?.img_x ?? 0,
+        img_y: last?.img_y ?? 0,
+        viewport_x: last?.viewport_x ?? 0,
+        viewport_y: last?.viewport_y ?? 0,
         t: Date.now(),
         event_type: "up",
       });
 
-      const passed = stroke.every((p) => p.event_type !== "move_out");
+      const passed = raw_points.every((p) => p.event_type !== "move_out");
 
-      // 결과 색으로 다시 그리기
       drawStroke(passed ? COLOR_PASS : COLOR_FAIL);
 
       if (passed) {
-        // ✅ 통과: 1초 후 결과 전달 + 종료
-        const resultStroke = stroke.slice();
+        const result_raw_points = raw_points.slice();
 
         setTimeout(() => {
           cleanup();
-          console.log("resultStroke", resultStroke);
           resolve({
             cancelled: false,
-            strokes: resultStroke,
-          } as any);
+            raw_points: result_raw_points,
+          });
         }, 1000);
       } else {
         setTimeout(() => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          stroke = [];
+          raw_points = [];
         }, 1000);
       }
 
@@ -266,28 +309,29 @@ export function renderPhaseA(
 
       isPressed = false;
       activePointerId = null;
-      stroke = [];
+      raw_points = [];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       slot.releasePointerCapture(e.pointerId);
 
-      cleanup();
-      resolve({ cancelled: true, reason: "CANCEL" } as any);
+      abort("CANCEL");
     });
 
-    /* =========================
-     * ESC 취소
-     * ========================= */
+    // closeBtn.addEventListener("click", () => {
+    //   abort("CLOSE");
+    // });
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        cleanup();
-        resolve({ cancelled: true, reason: "ESC" });
+        abort("ESC");
       }
     };
     window.addEventListener("keydown", onKeyDown);
 
-    /* =========================
-     * Cleanup
-     * ========================= */
+    function abort(reason: AbortReason) {
+      cleanup();
+      resolve({ cancelled: true, reason });
+    }
+
     function cleanup() {
       container.remove();
       window.removeEventListener("keydown", onKeyDown);

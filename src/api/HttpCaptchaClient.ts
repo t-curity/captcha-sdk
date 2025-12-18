@@ -1,5 +1,12 @@
 import { CaptchaClient } from "./CaptchaClient";
-import { CaptchaResponse, CaptchaPayload, SessionID } from "./captcha.types";
+import {
+  CaptchaPayload,
+  InitResponse,
+  RequestResponse,
+  ApiResponse,
+  SubmitResponse,
+} from "@/types/contracts/protocol";
+import { ClientID, SessionID } from "@/types/contracts/primitives";
 import { CaptchaEnv } from "../config/captcha.env";
 
 export class HttpCaptchaClient implements CaptchaClient {
@@ -11,8 +18,8 @@ export class HttpCaptchaClient implements CaptchaClient {
     this.timeoutMs = env.timeoutMs;
   }
 
-  async init(client_id: string): Promise<CaptchaResponse> {
-    let res = await this.post(
+  async init(client_id: ClientID): Promise<InitResponse> {
+    let res = await this.post<InitResponse>(
       "/v1/session/init",
       {
         "X-Client-Id": client_id,
@@ -23,8 +30,8 @@ export class HttpCaptchaClient implements CaptchaClient {
     return res;
   }
 
-  async request(session_Id: SessionID): Promise<CaptchaResponse> {
-    let res = await this.post(
+  async request(session_Id: SessionID): Promise<RequestResponse> {
+    let res = await this.post<RequestResponse>(
       "/v1/captcha/request",
       {
         "X-Session-Id": session_Id,
@@ -38,8 +45,8 @@ export class HttpCaptchaClient implements CaptchaClient {
   async submit(
     session_Id: SessionID,
     payload: CaptchaPayload,
-  ): Promise<CaptchaResponse> {
-    const res = await this.post(
+  ): Promise<SubmitResponse> {
+    const res = await this.post<SubmitResponse>(
       "/v1/captcha/submit",
       {
         "X-Session-Id": session_Id,
@@ -50,11 +57,11 @@ export class HttpCaptchaClient implements CaptchaClient {
     return res;
   }
 
-  private async post(
+  private async post<T extends ApiResponse>(
     path: string,
     headers?: Record<string, string>,
     body?: unknown,
-  ): Promise<CaptchaResponse> {
+  ): Promise<T> {
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       headers: {
@@ -62,6 +69,7 @@ export class HttpCaptchaClient implements CaptchaClient {
         ...(headers ?? {}),
       },
       body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(this.timeoutMs),
     });
 
     if (!res.ok) {
