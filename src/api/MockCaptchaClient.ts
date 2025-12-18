@@ -29,8 +29,11 @@ export class MockCaptchaClient implements CaptchaClient {
     });
 
     return {
+      success: true,
       status: "INIT",
-      session_id: session_id,
+      data: {
+        session_id: session_id,
+      },
     };
   }
 
@@ -50,12 +53,15 @@ export class MockCaptchaClient implements CaptchaClient {
     });
 
     return {
+      success: true,
       status: "PHASE_A",
-      problem: this.phaseA(),
+      data: {
+        problem: this.phaseA(),
+      },
     };
   }
 
-  async submit(session_id: string, _: any): Promise<CaptchaResponse> {
+  async submit(session_id: string, _payload: any): Promise<CaptchaResponse> {
     const session = this.sessions.get(session_id);
 
     if (!session) throw new Error("SESSION_NOT_FOUND");
@@ -75,8 +81,11 @@ export class MockCaptchaClient implements CaptchaClient {
         });
 
         return {
+          success: true,
           status: "PHASE_B",
-          problem: problem,
+          data: {
+            problem: problem,
+          },
         };
       case "PHASE_B":
         // B는 통과로 간주
@@ -87,6 +96,7 @@ export class MockCaptchaClient implements CaptchaClient {
         });
 
         return {
+          success: true,
           status: "COMPLETED",
         };
       default:
@@ -96,13 +106,14 @@ export class MockCaptchaClient implements CaptchaClient {
 
   private phaseA(): PhaseAProblem {
     return {
-      image: this.loader.ticket(),
       guide_line: {
         start: [0.7, 0],
         end: [0.7, 1],
         width: 0.06,
       },
-      guide_text: "절취선을 따라 선을 그려주세요",
+      guide_text: "절취선을 따라 드래그하세요.",
+      image: this.loader.ticket(),
+      phase: "1/2",
       time_limit: 30,
     };
   }
@@ -111,6 +122,7 @@ export class MockCaptchaClient implements CaptchaClient {
     return {
       images: this.loader.problemImages().map((p) => p.image),
       question: "다음 중 토끼를 번호가 작은 것부터 순서대로 나열하세요",
+      phase: "2/2",
       time_limit: 60,
     };
   }

@@ -4,7 +4,7 @@ export type StrokePoint = {
   x: number; // 0..1
   y: number; // 0..1
   t: number;
-  type: PointerEventType;
+  event_type: PointerEventType;
 };
 
 export type StrokeModel = {

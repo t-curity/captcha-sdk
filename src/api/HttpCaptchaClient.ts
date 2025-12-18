@@ -12,38 +12,48 @@ export class HttpCaptchaClient implements CaptchaClient {
   }
 
   async init(client_id: string): Promise<CaptchaResponse> {
-    return this.post(
+    let res = await this.post(
       "/v1/session/init",
-      {},
       {
         "X-Client-Id": client_id,
       },
+      {},
     );
+
+    return res;
   }
 
   async request(session_Id: SessionID): Promise<CaptchaResponse> {
-    return this.post(
+    let res = await this.post(
       "/v1/captcha/request",
-      {},
       {
         "X-Session-Id": session_Id,
       },
+      {},
     );
+
+    return res;
   }
 
   async submit(
     session_Id: SessionID,
     payload: CaptchaPayload,
   ): Promise<CaptchaResponse> {
-    return this.post("/v1/captcha/submit", payload, {
-      "X-Session-Id": session_Id,
-    });
+    const res = await this.post(
+      "/v1/captcha/submit",
+      {
+        "X-Session-Id": session_Id,
+      },
+      payload,
+    );
+
+    return res;
   }
 
   private async post(
     path: string,
-    body?: unknown,
     headers?: Record<string, string>,
+    body?: unknown,
   ): Promise<CaptchaResponse> {
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",

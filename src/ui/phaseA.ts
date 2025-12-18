@@ -1,5 +1,5 @@
 import { getOverlayRoot } from "@/ui/overlay";
-import { GuideLine } from "@/api/captcha.types";
+import { GuideLine, TracePoint } from "@/api/captcha.types";
 import { StrokePoint } from "@/stroke/StrokeModel";
 import { PhaseAResult } from "@/ui/contracts";
 
@@ -8,10 +8,11 @@ const COLOR_PASS = "rgba(0,200,0,0.9)";
 const COLOR_FAIL = "rgba(255,60,60,0.9)";
 
 export function renderPhaseA(
-  imageSrc: string,
-  guideLine: GuideLine,
+  image_src: string,
+  guide_line: GuideLine,
 ): Promise<PhaseAResult> {
   return new Promise((resolve) => {
+    console.log(guide_line);
     const root = getOverlayRoot();
 
     const container = document.createElement("div");
@@ -32,7 +33,7 @@ export function renderPhaseA(
     slot.style.display = "inline-block";
 
     const img = document.createElement("img");
-    img.src = imageSrc;
+    img.src = `data:image/png;base64,${image_src}`;
     img.style.display = "block";
     img.style.maxWidth = "480px";
     img.style.userSelect = "none";
@@ -65,7 +66,7 @@ export function renderPhaseA(
     };
 
     function renderGuideLine(rect: DOMRect) {
-      const { start, end, width } = guideLine;
+      const { start, end, width } = guide_line;
 
       const ax = start[0] * rect.width;
       const ay = start[1] * rect.height;
@@ -112,8 +113,8 @@ export function renderPhaseA(
       py: number,
       rect: DOMRect,
     ): boolean {
-      const [sx, sy] = guideLine.start;
-      const [ex, ey] = guideLine.end;
+      const [sx, sy] = guide_line.start;
+      const [ex, ey] = guide_line.end;
 
       const ax = sx * rect.width;
       const ay = sy * rect.height;
@@ -138,7 +139,7 @@ export function renderPhaseA(
       const dy = py - cy;
 
       const dist = Math.hypot(dx, dy);
-      const halfWidthPx = (guideLine.width * rect.width) / 2;
+      const halfWidthPx = (guide_line.width * rect.width) / 2;
 
       return dist <= halfWidthPx;
     }
@@ -152,7 +153,7 @@ export function renderPhaseA(
 
       for (const p of stroke) {
         // 🔥 move_out도 그린다
-        if (p.type !== "move" && p.type !== "move_out") {
+        if (p.event_type !== "move" && p.event_type !== "move_out") {
           prev = null;
           continue;
         }
@@ -192,7 +193,7 @@ export function renderPhaseA(
         x: Math.min(Math.max(px / r.width, 0), 1),
         y: Math.min(Math.max(py / r.height, 0), 1),
         t: Date.now(),
-        type: "down",
+        event_type: "down",
       });
     });
 
@@ -212,7 +213,7 @@ export function renderPhaseA(
         x,
         y,
         t: Date.now(),
-        type: insideGuide ? "move" : "move_out",
+        event_type: insideGuide ? "move" : "move_out",
       });
 
       // 🔥 항상 그린다
@@ -227,10 +228,10 @@ export function renderPhaseA(
         x: stroke[stroke.length - 1]?.x ?? 0,
         y: stroke[stroke.length - 1]?.y ?? 0,
         t: Date.now(),
-        type: "up",
+        event_type: "up",
       });
 
-      const passed = stroke.every((p) => p.type !== "move_out");
+      const passed = stroke.every((p) => p.event_type !== "move_out");
 
       // 결과 색으로 다시 그리기
       drawStroke(passed ? COLOR_PASS : COLOR_FAIL);
@@ -241,9 +242,10 @@ export function renderPhaseA(
 
         setTimeout(() => {
           cleanup();
+          console.log("resultStroke", resultStroke);
           resolve({
             cancelled: false,
-            stroke: resultStroke,
+            strokes: resultStroke,
           } as any);
         }, 1000);
       } else {

@@ -4,9 +4,12 @@ import type {
   SessionID,
   CaptchaResponse,
   CaptchaPayload,
+  PhaseAProblem,
+  TracePoint,
 } from "@/api/captcha.types";
 import { PhaseAResult } from "@/ui/contracts";
 import { renderPhaseA } from "@/ui/phaseA";
+import { StrokePoint } from "@/stroke/StrokeModel";
 
 class UserCancelledError extends Error {
   code = "USER_CANCELLED" as const;
@@ -15,14 +18,17 @@ class UserCancelledError extends Error {
   }
 }
 
+function StrokeToTracePoint(stroke: StrokePoint[]): TracePoint[] {
+  return stroke.map((p) => [p.x, p.y, p.t, p.event_type]);
+}
+
 function mapPhaseAToPayload(result: PhaseAResult): CaptchaPayload {
   if (result.cancelled) {
     throw new UserCancelledError();
   }
 
   return {
-    phase: "PHASE_A",
-    behavior_pattern_data: result.behavior_pattern_data,
+    behavior_pattern_data: StrokeToTracePoint(result.strokes),
   };
 }
 
@@ -56,13 +62,12 @@ export class CaptchaController {
     try {
       // 1️⃣ INIT
       let res: CaptchaResponse = await client.init(clientId);
-      console.log(res);
 
       if (res.status !== "INIT") {
         throw new Error("INVALID_STATE");
       }
 
-      const session_id = res.session_id;
+      const session_id = res.data?.session_id;
 
       // 2️⃣ 서버 주도 상태 머신
       while (true) {
@@ -74,25 +79,27 @@ export class CaptchaController {
 
         switch (res.status) {
           case "INIT": {
-            res = await client.request(session_id);
+            res = await client.request(session_id!);
             continue;
           }
           case "PHASE_A": {
+            const problem = res.data?.problem as PhaseAProblem;
             const uiResult: PhaseAResult = await renderPhaseA(
-              res.problem.image,
-              res.problem.guide_line!,
+              problem.image,
+              problem.guide_line,
             );
 
             const payload = mapPhaseAToPayload(uiResult);
 
-            res = await client.submit(session_id, payload);
+            console.log("PHASE_A", payload);
+
+            res = await client.submit(session_id!, payload);
             continue;
           }
           case "PHASE_B": {
             const payload: CaptchaPayload = {
-              phase: "PHASE_B",
               behavior_pattern_data: [],
-              answer: [
+              user_answer: [
                 "n02088364_2158",
                 "n02088364_2160",
                 "n02105641_1945",
@@ -100,11 +107,11 @@ export class CaptchaController {
               ],
             };
 
-            res = await client.submit(session_id, payload);
+            res = await client.submit(session_id!, payload);
             continue;
           }
           case "COMPLETED": {
-            return session_id;
+            return session_id!;
           }
           default:
             throw new Error("INVALID_STATE");

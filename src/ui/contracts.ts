@@ -1,11 +1,11 @@
-import { TracePoint } from "@/api/captcha.types";
+import { StrokePoint } from "@/stroke/StrokeModel";
 
 export type UIAbortReason = "ESC" | "CLOSE";
 
 export type PhaseAResult =
   | {
       cancelled: false;
-      behavior_pattern_data: TracePoint[];
+      strokes: StrokePoint[];
     }
   | {
       cancelled: true;
@@ -15,7 +15,7 @@ export type PhaseAResult =
 export type PhaseBResult =
   | {
       cancelled: false;
-      behavior_pattern_data: TracePoint[];
+      strokes: StrokePoint[];
       selectedIndexes: number[];
     }
   | {

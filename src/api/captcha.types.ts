@@ -24,45 +24,36 @@ export type TracePoint = [
   t: number, // timestamp (ms)
   event_type: PointerEventType,
 ];
+
 export type BehaviorPatternData = TracePoint[];
 
 export type PhaseAProblem = {
-  image: Base64;
-  guide_line?: GuideLine;
+  guide_line: GuideLine;
   guide_text: Message;
+  image: Base64;
+  phase: Message;
   time_limit: TimeLimit;
 };
 
 export type PhaseBProblem = {
-  images: Base64[];
   question: Message;
+  images: Base64[];
+  phase: Message;
   time_limit: TimeLimit;
 };
 
-export type CaptchaResponse =
-  | {
-      status: "INIT";
-      session_id: SessionID;
-    }
-  | {
-      status: "PHASE_A";
-      problem: PhaseAProblem;
-    }
-  | {
-      status: "PHASE_B";
-      problem: PhaseBProblem;
-    }
-  | {
-      status: "COMPLETED";
-    };
+export interface CaptchaResponse {
+  success: boolean;
+  status?: Status;
+  data?: {
+    session_id?: SessionID;
+    problem?: PhaseAProblem | PhaseBProblem;
+  };
+  error?: string;
+  message?: string;
+}
 
-export type CaptchaPayload =
-  | {
-      phase: "PHASE_A";
-      behavior_pattern_data: BehaviorPatternData;
-    }
-  | {
-      phase: "PHASE_B";
-      behavior_pattern_data: BehaviorPatternData;
-      answer: Answer;
-    };
+export type CaptchaPayload = {
+  behavior_pattern_data: BehaviorPatternData;
+  user_answer?: Answer;
+};

@@ -24,7 +24,7 @@ export class MockImageLoader {
   ];
 
   ticket(): string {
-    return this.MockTicketImage;
+    return this.MockTicketImage.replace(/^data:image\/png;base64,/, "");
   }
 
   problemImages() {
