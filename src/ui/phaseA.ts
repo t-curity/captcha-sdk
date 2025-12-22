@@ -2,6 +2,9 @@ import { getOverlayRoot } from "@/ui/overlay";
 import type { GuideLine, PhaseAProblem } from "@/types/contracts/problems";
 import { RawPointerEvent } from "@/types/input-event/RawPointerEventModel";
 import { AbortReason, PhaseAResult } from "@/types/contracts/phase-results";
+import { isPointInsideGuideLine, toRawLine } from "@/utils/guideLineMath";
+import { toImageCoords } from "@/utils/coords";
+import { drawStroke } from "@/utils/drawStroke";
 
 const COLOR_DRAW = "#000";
 const COLOR_PASS = "rgba(0,200,0,0.9)";
@@ -18,54 +21,8 @@ export function renderPhaseA({
     console.log("guide_line", guide_line);
     const root = getOverlayRoot();
 
-    const container = document.createElement("div");
-    container.innerHTML = `
-      <style>
-        .phase-a {
-          background: #fff;
-          padding: 16px;
-          border-radius: 8px;
-          // padding-top: 36px;
-        }
-        .slot {
-          position: relative;
-          display: inline-block;
-        }
-        .phase {
-          width: 100%;
-          margin-bottom: 12px;
-        }
-        .phase-bars {
-          display: flex;
-          gap: 6px;
-          width: 100%;
-        }
-        .phase-bar {
-          flex: 1;
-          height: 6px;
-          background: #e0e0e0; /* 회색 */
-          border-radius: 3px;
-        }
-        .phase-bar.active {
-          background: #1976d2; /* 파랑 */
-        }
-        .guide_text {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-top: 8px;
-        }
-      </style>
-      <div class="phase-a">
-        <div class="phase">
-          <div class="phase-bars">
-            <div class="phase-bar active"></div>
-            <div class="phase-bar"></div>
-          </div></div>
-        <div class="slot"></div>
-        <div class="guide_text">${guide_text}</div>
-      </div>
-    `;
+    const { container, slot } = createPhaseADOM(guide_text);
+    root.appendChild(container);
 
     // const closeBtn = document.createElement("button");
     // closeBtn.textContent = "×";
@@ -79,10 +36,6 @@ export function renderPhaseA({
     // closeBtn.style.lineHeight = "1";
     // container.style.position = "relative";
     // container.appendChild(closeBtn);
-
-    root.appendChild(container);
-
-    const slot = container.querySelector(".phase-a .slot") as HTMLDivElement;
 
     const img = document.createElement("img");
     img.src = `data:image/png;base64,${image}`;
@@ -106,11 +59,8 @@ export function renderPhaseA({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    let imgRect: DOMRect;
-
     img.onload = () => {
-      imgRect = img.getBoundingClientRect();
-
+      const imgRect = getImgRect();
       canvas.width = imgRect.width;
       canvas.height = imgRect.height;
       canvas.style.width = `${imgRect.width}px`;
@@ -120,23 +70,19 @@ export function renderPhaseA({
     };
 
     function renderGuideLine(rect: DOMRect) {
-      const { start, end, width } = guide_line;
+      const { start, end } = toRawLine(rect, guide_line);
 
-      const ax = start[0] * rect.width;
-      const ay = start[1] * rect.height;
-      const bx = end[0] * rect.width;
-      const by = end[1] * rect.height;
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
 
-      const dx = bx - ax;
-      const dy = by - ay;
       const len = Math.hypot(dx, dy);
       const angle = Math.atan2(dy, dx);
-      const bandWidth = rect.width * width;
+      const bandWidth = rect.width * guide_line.width;
 
       const band = document.createElement("div");
       band.style.position = "absolute";
-      band.style.left = `${ax}px`;
-      band.style.top = `${ay - bandWidth / 2}px`;
+      band.style.left = `${start.x}px`;
+      band.style.top = `${start.y - bandWidth / 2}px`;
       band.style.width = `${len}px`;
       band.style.height = `${bandWidth}px`;
       band.style.border = "1px dashed red";
@@ -146,8 +92,8 @@ export function renderPhaseA({
 
       const center = document.createElement("div");
       center.style.position = "absolute";
-      center.style.left = `${ax}px`;
-      center.style.top = `${ay}px`;
+      center.style.left = `${start.x}px`;
+      center.style.top = `${start.y}px`;
       center.style.width = `${len}px`;
       center.style.borderTop = "1px solid green";
       center.style.pointerEvents = "none";
@@ -162,65 +108,6 @@ export function renderPhaseA({
     let isPressed = false;
     let activePointerId: number | null = null;
 
-    function isInsideGuideLinePx(
-      px: number,
-      py: number,
-      rect: DOMRect,
-    ): boolean {
-      const [sx, sy] = guide_line.start;
-      const [ex, ey] = guide_line.end;
-
-      const ax = sx * rect.width;
-      const ay = sy * rect.height;
-      const bx = ex * rect.width;
-      const by = ey * rect.height;
-
-      const abx = bx - ax;
-      const aby = by - ay;
-      const apx = px - ax;
-      const apy = py - ay;
-
-      const abLenSq = abx * abx + aby * aby;
-      if (abLenSq === 0) return false;
-
-      let t = (apx * abx + apy * aby) / abLenSq;
-      t = Math.max(0, Math.min(1, t));
-
-      const cx = ax + abx * t;
-      const cy = ay + aby * t;
-
-      const dx = px - cx;
-      const dy = py - cy;
-
-      const dist = Math.hypot(dx, dy);
-      const halfWidthPx = (guide_line.width * rect.width) / 2;
-
-      return dist <= halfWidthPx;
-    }
-
-    function drawStroke(color: string) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = color;
-
-      let prev: { x: number; y: number } | null = null;
-
-      for (const p of raw_points) {
-        if (p.event_type !== "move" && p.event_type !== "move_out") {
-          prev = null;
-          continue;
-        }
-
-        if (prev) {
-          ctx.beginPath();
-          ctx.moveTo(prev.x, prev.y);
-          ctx.lineTo(p.img_x, p.img_y);
-          ctx.stroke();
-        }
-
-        prev = { x: p.img_x, y: p.img_y };
-      }
-    }
-
     slot.addEventListener("pointerdown", (e) => {
       if (activePointerId !== null) return;
 
@@ -231,14 +118,15 @@ export function renderPhaseA({
       isPressed = true;
       slot.setPointerCapture(e.pointerId);
 
-      const img_x = e.clientX - imgRect.left;
-      const img_y = e.clientY - imgRect.top;
+      const imgRect = getImgRect();
+      const img_p = toImageCoords(e, imgRect);
 
       raw_points.push({
-        img_x,
-        img_y,
-        viewport_x: e.clientX / window.innerWidth,
-        viewport_y: e.clientY / window.innerHeight,
+        img_p,
+        viewport_p: {
+          x: e.clientX / window.innerWidth,
+          y: e.clientY / window.innerHeight,
+        },
         t: Date.now(),
         event_type: "down",
       });
@@ -247,21 +135,22 @@ export function renderPhaseA({
     slot.addEventListener("pointermove", (e) => {
       if (!isPressed || e.pointerId !== activePointerId) return;
 
-      const img_x = e.clientX - imgRect.left;
-      const img_y = e.clientY - imgRect.top;
+      const imgRect = getImgRect();
+      const img_p = toImageCoords(e, imgRect);
 
-      const insideGuide = isInsideGuideLinePx(img_x, img_y, imgRect);
+      const insideGuide = isPointInsideGuideLine(img_p, imgRect, guide_line);
 
       raw_points.push({
-        img_x,
-        img_y,
-        viewport_x: e.clientX / window.innerWidth,
-        viewport_y: e.clientY / window.innerHeight,
+        img_p,
+        viewport_p: {
+          x: e.clientX / window.innerWidth,
+          y: e.clientY / window.innerHeight,
+        },
         t: Date.now(),
         event_type: insideGuide ? "move" : "move_out",
       });
 
-      drawStroke(COLOR_DRAW);
+      drawStroke(ctx, raw_points, COLOR_DRAW);
     });
 
     slot.addEventListener("pointerup", (e) => {
@@ -270,17 +159,15 @@ export function renderPhaseA({
       const last = raw_points[raw_points.length - 1];
 
       raw_points.push({
-        img_x: last?.img_x ?? 0,
-        img_y: last?.img_y ?? 0,
-        viewport_x: last?.viewport_x ?? 0,
-        viewport_y: last?.viewport_y ?? 0,
+        img_p: last?.img_p ?? { x: 0, y: 0 },
+        viewport_p: last?.viewport_p ?? { x: 0, y: 0 },
         t: Date.now(),
         event_type: "up",
       });
 
       const passed = raw_points.every((p) => p.event_type !== "move_out");
 
-      drawStroke(passed ? COLOR_PASS : COLOR_FAIL);
+      drawStroke(ctx, raw_points, passed ? COLOR_PASS : COLOR_FAIL);
 
       if (passed) {
         const result_raw_points = raw_points.slice();
@@ -332,9 +219,82 @@ export function renderPhaseA({
       resolve({ cancelled: true, reason });
     }
 
+    const onResize = () => {
+      syncCanvasSize();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    function syncCanvasSize() {
+      const rect = getImgRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    }
+
+    window.addEventListener("resize", onResize);
+
+    function getImgRect(): DOMRect {
+      return img.getBoundingClientRect();
+    }
+
     function cleanup() {
       container.remove();
       window.removeEventListener("keydown", onKeyDown);
     }
   });
+
+  function createPhaseADOM(guide_text: string) {
+    const container = document.createElement("div");
+    container.innerHTML = `
+      <style>
+        .phase-a {
+          background: #fff;
+          padding: 16px;
+          border-radius: 8px;
+          // padding-top: 36px;
+        }
+        .slot {
+          position: relative;
+          display: inline-block;
+        }
+        .phase {
+          width: 100%;
+          margin-bottom: 12px;
+        }
+        .phase-bars {
+          display: flex;
+          gap: 6px;
+          width: 100%;
+        }
+        .phase-bar {
+          flex: 1;
+          height: 6px;
+          background: #e0e0e0; /* 회색 */
+          border-radius: 3px;
+        }
+        .phase-bar.active {
+          background: #1976d2; /* 파랑 */
+        }
+        .guide_text {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 8px;
+        }
+      </style>
+      <div class="phase-a">
+        <div class="phase">
+          <div class="phase-bars">
+            <div class="phase-bar active"></div>
+            <div class="phase-bar"></div>
+          </div></div>
+        <div class="slot"></div>
+        <div class="guide_text">${guide_text}</div>
+      </div>
+    `;
+
+    const slot = container.querySelector(".slot") as HTMLDivElement;
+    return { container, slot };
+  }
 }

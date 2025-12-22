@@ -10,3 +10,15 @@ export type NormalizedPoint = [
   x: number, // 0..1
   y: number, // 0..1
 ];
+
+export type NormalizedLine = {
+  start: NormalizedPoint;
+  end: NormalizedPoint;
+};
+
+export type ImageCell = {
+  image_id: ImageID;
+  image: Base64;
+};
+
+export type ImageGrid = ImageCell[];
