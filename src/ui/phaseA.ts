@@ -15,7 +15,7 @@ export function renderPhaseA({
   time_limit,
 }: PhaseAProblem): Promise<PhaseAResult> {
   return new Promise((resolve) => {
-    console.log(guide_line);
+    console.log("guide_line", guide_line);
     const root = getOverlayRoot();
 
     const container = document.createElement("div");

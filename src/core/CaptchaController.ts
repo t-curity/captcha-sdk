@@ -111,7 +111,7 @@ export class CaptchaController {
         }
       }
     } catch (e: any) {
-      console.log(e);
+      console.log("e", e);
       if (e?.code === "USER_CANCELLED") throw e;
       throw new Error("AUTH_FAILED");
     } finally {

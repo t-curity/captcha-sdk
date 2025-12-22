@@ -5,7 +5,7 @@ import { getEnv } from "./config/captcha.env";
 
 export function createCaptchaClient(): CaptchaClient {
   const env = getEnv();
-  console.log(env);
+  console.log("env", env);
   switch (env.mode) {
     case "dev":
       return new MockCaptchaClient();
