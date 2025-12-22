@@ -21,12 +21,14 @@ async function captcha(client_id: ClientID): Promise<SessionID> {
   return controller.getOrCreateCaptcha(client_id);
 }
 
-window.TCuritySDK = {
-  captcha,
-  errors: {
-    InactivityTimeoutError,
-    UserCancelledError,
-  },
+const errors = {
+  InactivityTimeoutError,
+  UserCancelledError,
 };
 
-export { captcha };
+window.TCuritySDK = {
+  captcha,
+  errors: errors,
+};
+
+export { captcha, errors };
