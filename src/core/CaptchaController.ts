@@ -1,118 +1,37 @@
-import { createCaptchaClient } from "@/createCaptchaClient";
 import { showOverlay, hideOverlay } from "@/ui/overlay";
-import type { SessionID } from "@/types/contracts/primitives";
-import type {
-  CaptchaPayload,
-  InitResponse,
-  SubmitResponse,
-} from "@/types/contracts/protocol";
-import type { PhaseAProblem } from "@/types/contracts/problems";
-import { PhaseAResult } from "@/types/contracts/phase-results";
-import { renderPhaseA } from "@/ui/phaseA";
-import { createDeviceMetadata } from "@/utils/device-metadata";
-import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
+import type { ClientID, SessionID } from "@/types/contracts/primitives";
 import { UserCancelledError } from "./error/UserCancelledError";
+import { withInactivityTimeout } from "@/core/policy/withInactivityTimeout";
+import { InactivityTimeoutError } from "./error/TimeoutError";
+import { CaptchaProcess } from "./CaptchaProcess";
 
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
 export class CaptchaController {
-  private inFlight: Promise<SessionID> | null = null;
+  private _in_flight: Promise<SessionID> | null = null;
 
-  async run(clientId: string): Promise<SessionID> {
-    if (!clientId) {
-      throw new Error("clientId is required");
+  async getOrCreateCaptcha(client_id: ClientID): Promise<SessionID> {
+    if (!client_id) {
+      throw new Error("client_id is required");
     }
 
-    // 🔒 단일 실행 보장
-    if (this.inFlight) {
-      return this.inFlight;
-    }
-
-    this.inFlight = this.execute(clientId).finally(() => {
-      this.inFlight = null;
-    });
-
-    return this.inFlight;
+    return (this._in_flight ??= this.execute(client_id).finally(() => {
+      this._in_flight = null;
+    }));
   }
 
-  private async execute(clientId: string): Promise<SessionID> {
-    const client = createCaptchaClient();
-
-    showOverlay();
-
+  private async execute(client_id: ClientID): Promise<SessionID> {
     try {
-      // Init
-      const init_response: InitResponse = await client.init(clientId);
+      const process = new CaptchaProcess();
+      showOverlay();
 
-      if (!init_response.success) {
-        throw new Error(init_response.error ?? "INIT_FAILED");
-      }
-
-      if (init_response.status !== "INIT") {
-        throw new Error("INVALID_STATE");
-      }
-
-      const session_id = init_response.data.session_id;
-
-      // Request
-      let request_response = await client.request(session_id);
-
-      if (!request_response.success) {
-        throw new Error(request_response.error ?? "REQUEST_FAILED");
-      }
-
-      // PHASE_A setting
-      let res: SubmitResponse = request_response;
-
-      // 문제 풀이 시작
-      while (true) {
-        if (!res.success) {
-          throw new Error(res.error ?? "REQUEST_FAILED");
-        }
-
-        console.log(res);
-
-        switch (res.status) {
-          case "PHASE_A": {
-            const { problem } = res.data;
-            const result: PhaseAResult = await renderPhaseA(problem);
-
-            if (result.cancelled) {
-              throw new UserCancelledError();
-            }
-
-            const payload = mapPhaseAToPayload(result.raw_points);
-
-            console.log("PHASE_A", payload);
-
-            res = await client.submit(session_id, payload);
-            continue;
-          }
-          case "PHASE_B": {
-            const { problem } = res.data;
-            // PHASE_B UI render
-            const payload: CaptchaPayload = {
-              points: [],
-              user_answer: [
-                "n02088364_2158",
-                "n02088364_2160",
-                "n02105641_1945",
-                "n02105641_4815",
-              ],
-              metadata: createDeviceMetadata(),
-            };
-
-            res = await client.submit(session_id, payload);
-            continue;
-          }
-          case "COMPLETED": {
-            return session_id;
-          }
-          default:
-            throw new Error("INVALID_STATE");
-        }
-      }
+      return await withInactivityTimeout({
+        timeout_ms: INACTIVITY_TIMEOUT_MS,
+        inactivity_timeout_task: () => process.run(client_id),
+      });
     } catch (e: any) {
       console.log("e", e);
-      if (e?.code === "USER_CANCELLED") throw e;
+      if (e instanceof UserCancelledError) throw e;
+      if (e instanceof InactivityTimeoutError) throw e;
       throw new Error("AUTH_FAILED");
     } finally {
       hideOverlay();

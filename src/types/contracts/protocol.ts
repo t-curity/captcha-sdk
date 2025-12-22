@@ -5,35 +5,47 @@ import type { PhaseAProblem, PhaseBProblem } from "@/types/contracts/problems";
 
 export type Answer = [A1: ImageID, A2: ImageID, A3: ImageID, A4: ImageID];
 
-export interface CaptchaResult<S extends Status = Status> {
+export interface CaptchaResponse<S extends Status = Status> {
   success: true;
   status: S;
 }
 
-export type CommonResult<T, S extends Status = Status> = CaptchaResult<S> & {
+export type CommonResponse<
+  T,
+  S extends Status = Status,
+> = CaptchaResponse<S> & {
   data: T;
 };
 
-export interface HttpErrorResult {
+export interface APIErrorResponse {
   success: false;
   error: string;
   message: string;
 }
 
-export type SessionIDResult = CommonResult<{ session_id: SessionID }, "INIT">;
-export type PhaseAResult = CommonResult<{ problem: PhaseAProblem }, "PHASE_A">;
-export type PhaseBResult = CommonResult<{ problem: PhaseBProblem }, "PHASE_B">;
-export type CompletedResult = CaptchaResult<"COMPLETED">;
+export type SessionIDResponse = CommonResponse<
+  { session_id: SessionID },
+  "INIT"
+>;
+export type PhaseAResponse = CommonResponse<
+  { problem: PhaseAProblem },
+  "PHASE_A"
+>;
+export type PhaseBResponse = CommonResponse<
+  { problem: PhaseBProblem },
+  "PHASE_B"
+>;
+export type CompletedResponse = CaptchaResponse<"COMPLETED">;
 
-export type InitResponse = SessionIDResult | HttpErrorResult;
-export type RequestResponse = PhaseAResult | HttpErrorResult;
+export type InitResponse = SessionIDResponse | APIErrorResponse;
+export type RequestResponse = PhaseAResponse | APIErrorResponse;
 export type SubmitResponse =
-  | PhaseAResult
-  | PhaseBResult
-  | CompletedResult
-  | HttpErrorResult;
+  | PhaseAResponse
+  | PhaseBResponse
+  | CompletedResponse
+  | APIErrorResponse;
 
-export type ApiResponse = CaptchaResult | HttpErrorResult;
+export type ApiResponse = CaptchaResponse | APIErrorResponse;
 
 export type DeviceType = "MOBILE" | "PC";
 
