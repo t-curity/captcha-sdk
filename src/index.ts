@@ -1,10 +1,16 @@
 import { CaptchaController } from "@/core/CaptchaController";
 import type { ClientID, SessionID } from "./types/contracts/primitives";
+import { UserCancelledError } from "./core/error/UserCancelledError";
+import { InactivityTimeoutError } from "./core/error/TimeoutError";
 
 declare global {
   interface Window {
     TCuritySDK?: {
       captcha: (client_id: ClientID) => Promise<SessionID>;
+      errors: {
+        InactivityTimeoutError: typeof InactivityTimeoutError;
+        UserCancelledError: typeof UserCancelledError;
+      };
     };
   }
 }
@@ -17,6 +23,10 @@ async function captcha(client_id: ClientID): Promise<SessionID> {
 
 window.TCuritySDK = {
   captcha,
+  errors: {
+    InactivityTimeoutError,
+    UserCancelledError,
+  },
 };
 
 export { captcha };
