@@ -5,10 +5,12 @@ export function showOverlay() {
   if (overlayEl) return;
 
   overlayEl = document.createElement("div");
-  overlayEl.id = "tcurity-overlay-host"; // ⭐ 중요
+  overlayEl.id = "tcurity-overlay-host";
   overlayEl.style.position = "fixed";
   overlayEl.style.inset = "0";
   overlayEl.style.background = "rgba(0,0,0,0.4)";
+  overlayEl.style.backdropFilter = "blur(6px)";
+  overlayEl.style.setProperty("-webkit-backdrop-filter", "blur(6px)");
   overlayEl.style.zIndex = "9999";
   overlayEl.style.display = "flex";
   overlayEl.style.alignItems = "center";
