@@ -1,6 +1,6 @@
-import type { RawPointerEvent } from "@/types/input-event/RawPointerEventModel";
+import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
 
-export type AbortReason = "ESC" | "CLOSE" | "CANCEL";
+export type AbortReason = "ESC" | "CLOSE" | "CANCEL" | "NAVIGATE";
 
 export type PhaseAResult =
   | {

@@ -9,7 +9,7 @@ import {
   SubmitResponse,
 } from "@/types/contracts/protocol";
 import { PhaseAResult } from "@/types/contracts/phase-results";
-import { renderPhaseA } from "@/ui/phaseA";
+import { renderPhaseA } from "@/ui/phase/phaseA/phaseA";
 import { UserCancelledError } from "./error/UserCancelledError";
 import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
 import { createDeviceMetadata } from "@/utils/device-metadata";
@@ -90,10 +90,19 @@ export class CaptchaProcess {
     const client = this.getOrCreateClient();
     const { problem } = current.data;
 
-    const result: PhaseAResult = await renderPhaseA(problem);
+    const result: PhaseAResult = await renderPhaseA(problem, {
+      debugGuideLine: true,
+    });
 
     if (result.cancelled) {
+      switch (result.reason) {
+        case "ESC":
+        case "CLOSE":
+        case "CANCEL":
       throw new UserCancelledError();
+        default:
+          throw new Error("AUTH_FAILED");
+      }
     }
 
     const payload = mapPhaseAToPayload(result.raw_points);

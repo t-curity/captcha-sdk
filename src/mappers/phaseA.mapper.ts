@@ -1,7 +1,7 @@
 import { createDeviceMetadata } from "@/utils/device-metadata";
 import { toViewportPointerEvents } from "@/mappers/raw-points.mapper";
 import type { CaptchaPayload } from "@/types/contracts/protocol";
-import { RawPointerEvent } from "@/types/input-event/RawPointerEventModel";
+import { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
 
 export function mapPhaseAToPayload(
   raw_points: RawPointerEvent[],

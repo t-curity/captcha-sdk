@@ -1,4 +1,4 @@
-import { InactivityTimeoutError } from "@/core/error/TimeoutError";
+import { InactivityTimeoutError } from "@/core/error/InactivityTimeoutError";
 
 export type InactivityTimeoutOptions<T> = {
   timeout_ms: number;

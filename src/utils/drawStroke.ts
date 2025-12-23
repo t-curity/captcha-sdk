@@ -1,7 +1,4 @@
-import {
-  RawPoint,
-  RawPointerEvent,
-} from "@/types/input-event/RawPointerEventModel";
+import { RawPoint, RawPointerEvent } from "@/ui/types/RawPointerEventModel";
 
 export function drawStroke(
   ctx: CanvasRenderingContext2D,

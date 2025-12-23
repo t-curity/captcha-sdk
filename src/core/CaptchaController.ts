@@ -1,8 +1,8 @@
-import { showOverlay, hideOverlay } from "@/ui/overlay";
+import { showOverlay, hideOverlay } from "@/ui/overlay/overlay";
 import type { ClientID, SessionID } from "@/types/contracts/primitives";
 import { UserCancelledError } from "./error/UserCancelledError";
 import { withInactivityTimeout } from "@/core/policy/withInactivityTimeout";
-import { InactivityTimeoutError } from "./error/TimeoutError";
+import { InactivityTimeoutError } from "./error/InactivityTimeoutError";
 import { CaptchaProcess } from "./CaptchaProcess";
 
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;

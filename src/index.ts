@@ -1,7 +1,7 @@
 import { CaptchaController } from "@/core/CaptchaController";
 import type { ClientID, SessionID } from "./types/contracts/primitives";
 import { UserCancelledError } from "./core/error/UserCancelledError";
-import { InactivityTimeoutError } from "./core/error/TimeoutError";
+import { InactivityTimeoutError } from "./core/error/InactivityTimeoutError";
 
 declare global {
   interface Window {

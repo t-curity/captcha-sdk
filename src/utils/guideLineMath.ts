@@ -1,6 +1,6 @@
 import { NormalizedLine } from "@/types/contracts/primitives";
 import { GuideLine } from "@/types/contracts/problems";
-import { RawLine, RawPoint } from "@/types/input-event/RawPointerEventModel";
+import { RawLine, RawPoint } from "@/ui/types/RawPointerEventModel";
 
 export function toRawLine(rect: DOMRect, line: NormalizedLine): RawLine {
   const [sx, sy] = line.start;

@@ -1,4 +1,4 @@
-import { RawPoint } from "@/types/input-event/RawPointerEventModel";
+import { RawPoint } from "@/ui/types/RawPointerEventModel";
 
 export function toImageCoords(e: PointerEvent, rect: DOMRect): RawPoint {
   return {

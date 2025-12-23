@@ -1,6 +1,22 @@
 let overlayEl: HTMLDivElement | null = null;
 let shadowRoot: ShadowRoot | null = null;
 
+const listeners = new Set<(reason: "NAVIGATE") => void>();
+
+export function onOverlayDismiss(cb: (reason: "NAVIGATE") => void): () => void {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+function emitDismiss(reason: "NAVIGATE") {
+  for (const cb of listeners) cb(reason);
+}
+
+function onPopState() {
+  // overlay는 직접 abort를 모름. 이벤트만 발행.
+  emitDismiss("NAVIGATE");
+}
+
 export function showOverlay() {
   if (overlayEl) return;
 
@@ -20,15 +36,18 @@ export function showOverlay() {
 
   document.body.appendChild(overlayEl);
   document.body.style.overflow = "hidden";
+
+  window.addEventListener("popstate", onPopState);
 }
 
 export function hideOverlay() {
   if (!overlayEl) return;
 
+  window.removeEventListener("popstate", onPopState);
+
   overlayEl.remove();
   overlayEl = null;
   shadowRoot = null;
-
   document.body.style.overflow = "";
 }
 
