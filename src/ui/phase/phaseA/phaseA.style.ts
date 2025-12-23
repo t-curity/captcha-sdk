@@ -17,6 +17,7 @@ export const phaseACss = `
 
 .tc-guide-band {
   position: absolute;
+  box-sizing: border-box;
   border: 1px dashed red;
   pointer-events: none;
   transform-origin: 0 50%
@@ -24,11 +25,12 @@ export const phaseACss = `
   
 .tc-guide-center {
   position: absolute;
-  border-top = 1px solid green;
-  pointer-events = none;
-  transform-origin = 0 0;
+  box-sizing: border-box;
+  border-top: 1px solid green;
+  pointer-events: none;
+  transform-origin: 0 50%;
 }
-  
+
 .tc-guide-text {
   display: flex;
   align-items: center;

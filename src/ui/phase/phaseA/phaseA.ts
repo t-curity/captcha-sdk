@@ -35,6 +35,7 @@ export function renderPhaseA(
 
     // 진행도 세팅
     setPhasePercents([100, 0]);
+
     // Style
     applyShadowStyle(overlayRoot, phaseBaseCss, "phase-base");
     applyShadowStyle(overlayRoot, phaseACss, "phase-a");
@@ -44,20 +45,22 @@ export function renderPhaseA(
       img,
       canvas,
       ctx,
-      syncSize,
+      onReady,
+      getImageLocalRect,
       cleanup: cleanupCanvas,
     } = setupImageCanvas(slot, image);
 
     // Debug용 GuideLine
     let cleanupGuide: (() => void) | null = null;
 
-    img.addEventListener("load", () => {
-      const rect = syncSize();
-
-      if (PhaseAOptions?.debugGuideLine) {
+    if (PhaseAOptions?.debugGuideLine) {
+      onReady(() => {
+        const rect = getImageLocalRect();
+        console.log("img natural", img.naturalWidth, img.naturalHeight);
+        console.log("img rect", img.getBoundingClientRect());
         cleanupGuide = renderGuideLine(slot, rect, guide_line);
-      }
-    });
+      });
+    }
 
     const cleanupInput = usePhaseAInput({
       slot,
@@ -103,7 +106,7 @@ export function renderPhaseA(
       cleanupInput();
       cleanupKey();
       cleanupCanvas();
-      container.remove();
+      baseRoot.remove();
     }
   });
 }
