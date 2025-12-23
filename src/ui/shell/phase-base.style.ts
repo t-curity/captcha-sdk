@@ -5,7 +5,6 @@ export const phaseBaseCss = `
   border-radius: 8px;
   padding: 16px;
   box-sizing: border-box;
-  max-width: 480px;
 }
 
 .tc-header {
@@ -13,7 +12,7 @@ export const phaseBaseCss = `
   align-items: center;
   justify-content: space-between;
 }
-
+  
 .tc-body {
   position: relative;
 }
@@ -21,7 +20,7 @@ export const phaseBaseCss = `
 .tc-phase-bars {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  width: 100%;
 }
 
 .tc-phase-bar {
@@ -29,6 +28,14 @@ export const phaseBaseCss = `
   height: 6px;
   border-radius: 3px;
   background: #e0e0e0;
+  overflow: hidden;
+}
+
+.tc-phase-bar__fill {
+  height: 100%;
+  width: 0%;
+  background: #1976d2;
+  transition: width 200ms ease;
 }
 
 .tc-close {

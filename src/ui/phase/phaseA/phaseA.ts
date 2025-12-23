@@ -9,6 +9,7 @@ import { setupImageCanvas } from "@/ui/utils/setupImageCanvas";
 import { renderGuideLine } from "./renderGuideLine";
 import { usePhaseAInput } from "./usePhaseAInput";
 import { useAbortKey } from "@/ui/shell/useAbortKey";
+import { createPhaseBaseDOM } from "@/ui/shell/phase-base.dom";
 
 export function renderPhaseA(
   { guide_line, guide_text, image, phase, time_limit }: PhaseAProblem,
@@ -16,15 +17,27 @@ export function renderPhaseA(
 ): Promise<PhaseAResult> {
   return new Promise((resolve) => {
     // Root
-    const root = getOverlayRoot();
+    const overlayRoot = getOverlayRoot();
+
+    // BaseRoot
+    const {
+      root: baseRoot,
+      body,
+      closeBtn,
+      setPhasePercents,
+    } = createPhaseBaseDOM();
+
+    overlayRoot.appendChild(baseRoot);
 
     // Dom
     const { container, slot } = createPhaseADOM(guide_text);
-    root.appendChild(container);
+    body.appendChild(container);
 
+    // 진행도 세팅
+    setPhasePercents([100, 0]);
     // Style
-    applyShadowStyle(root, phaseBaseCss, "phase-base");
-    applyShadowStyle(root, phaseACss, "phase-a");
+    applyShadowStyle(overlayRoot, phaseBaseCss, "phase-base");
+    applyShadowStyle(overlayRoot, phaseACss, "phase-a");
 
     // 이미지
     const {
