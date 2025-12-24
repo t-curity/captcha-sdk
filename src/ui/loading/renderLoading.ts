@@ -1,22 +1,18 @@
 import { getOverlayRoot } from "@/ui/overlay/overlay";
 import { applyShadowStyle } from "@/ui/shadow/applyStyle";
 import { loadingCss } from "./loading.style";
+import { createLoadingDOM } from "./loading.dom";
 
 export function renderLoading() {
-  const overlay = getOverlayRoot();
+  const overlayRoot = getOverlayRoot();
 
-  applyShadowStyle(overlay, loadingCss, "loading");
+  applyShadowStyle(overlayRoot, loadingCss, "loading");
 
-  const el = document.createElement("div");
-  el.className = "tc-loading";
-  el.innerHTML = `
-    <div class="tc-loading-backdrop"></div>
-    <div class="tc-loading-spinner"></div>
-  `;
-
-  overlay.appendChild(el);
+  const { container, backdrop, spinner } = createLoadingDOM();
+  console.log(container);
+  overlayRoot.appendChild(container);
 
   return () => {
-    el.remove();
+    container.remove();
   };
 }

@@ -1,6 +1,6 @@
 import { loadingHtml } from "./loading.template";
 
-export function createLoadingDOM(guideText: string) {
+export function createLoadingDOM() {
   const container = document.createElement("div");
   container.innerHTML = loadingHtml;
 
