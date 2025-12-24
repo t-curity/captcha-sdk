@@ -169,7 +169,12 @@ export function usePhaseBInput({
     return null;
   }
 
-  function cleanupPointer(e: PointerEvent) {
+  function cleanupPointer() {
+    if (activePointerId != null) {
+      try {
+        gridEl.releasePointerCapture(activePointerId);
+      } catch {}
+    }
     draggingCell?.classList.remove("is-dragging");
     draggingCell = null;
 
@@ -178,14 +183,18 @@ export function usePhaseBInput({
 
     slotEls.forEach((s) => s.classList.remove("is-hover"));
 
-    gridEl.releasePointerCapture(e.pointerId);
     activePointerId = null;
     activeImageIndex = null;
     currentSegment = null;
   }
 
-  function onPointerCancel(e: PointerEvent) {
-    cleanupPointer(e);
+  function onPointerCancel(_e: PointerEvent) {
+    cleanupPointer();
+    onAbort("CANCEL");
+  }
+
+  function onWindowBlur(_e: FocusEvent) {
+    cleanupPointer();
     onAbort("CANCEL");
   }
 
@@ -205,13 +214,15 @@ export function usePhaseBInput({
 
   gridEl.addEventListener("pointerdown", onPointerDown);
   gridEl.addEventListener("pointermove", onPointerMove);
-  gridEl.addEventListener("pointerup", onPointerUp);
-  gridEl.addEventListener("pointercancel", onPointerCancel);
+  document.addEventListener("pointerup", onPointerUp);
+  document.addEventListener("pointercancel", onPointerCancel);
+  window.addEventListener("blur", onWindowBlur);
 
   return () => {
     gridEl.removeEventListener("pointerdown", onPointerDown);
     gridEl.removeEventListener("pointermove", onPointerMove);
-    gridEl.removeEventListener("pointerup", onPointerUp);
-    gridEl.removeEventListener("pointercancel", onPointerCancel);
+    document.removeEventListener("pointerup", onPointerUp);
+    document.removeEventListener("pointercancel", onPointerCancel);
+    window.removeEventListener("blur", onWindowBlur);
   };
 }
