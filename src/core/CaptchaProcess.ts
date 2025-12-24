@@ -12,6 +12,7 @@ import { renderPhaseA } from "@/ui/phase/phaseA/phaseA";
 import { UserCancelledError } from "./error/UserCancelledError";
 import { mapPhaseAToPayload as mapToBehavioralData } from "@/mappers/phaseA.mapper";
 import { renderPhaseB } from "@/ui/phase/PhaseB/phaseB";
+import { withLoading } from "@/ui/loading/withLoading";
 
 export class CaptchaProcess {
   private _client: CaptchaClient | null = null;
@@ -30,7 +31,7 @@ export class CaptchaProcess {
 
   private async init(client_id: ClientID): Promise<SessionID> {
     const client = this.getOrCreateClient();
-    const init_response: InitResponse = await client.init(client_id);
+    const init_response = await withLoading(() => client.init(client_id), 0);
 
     if (!init_response.success) {
       throw new Error(init_response.error ?? "INIT_FAILED");
@@ -45,8 +46,10 @@ export class CaptchaProcess {
 
   private async request(session_id: SessionID): Promise<SubmitResponse> {
     const client = this.getOrCreateClient();
-    let request_response = await client.request(session_id);
-
+    let request_response = await withLoading(
+      () => client.request(session_id),
+      100,
+    );
     if (!request_response.success) {
       throw new Error(request_response.error ?? "REQUEST_FAILED");
     }
@@ -94,8 +97,7 @@ export class CaptchaProcess {
   ): Promise<SubmitResponse> {
     const client = this.getOrCreateClient();
     const { problem } = current.data;
-
-    const result: PhaseAResult = await renderPhaseA(problem, {
+    const result = await renderPhaseA(problem, {
       debugGuideLine: true,
     });
 
@@ -114,7 +116,7 @@ export class CaptchaProcess {
 
     console.log("PHASE_A", payload);
 
-    return await client.submit(session_id, payload);
+    return await withLoading(() => client.submit(session_id, payload), 400);
   }
 
   private async handlePhaseB(
@@ -124,7 +126,6 @@ export class CaptchaProcess {
     console.log("handlePhaseB", current);
     const client = this.getOrCreateClient();
     const { problem } = current.data;
-    console.log("client", client);
     const result = await renderPhaseB(problem, {
       debugGuideLine: true,
     });
@@ -148,6 +149,6 @@ export class CaptchaProcess {
 
     console.log("PHASE_B", payload);
 
-    return await client.submit(session_id, payload);
+    return await withLoading(() => client.submit(session_id, payload), 400);
   }
 }
