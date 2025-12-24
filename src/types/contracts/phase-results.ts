@@ -1,4 +1,5 @@
 import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
+import { Answer } from "./protocol";
 
 export type AbortReason = "ESC" | "CLOSE" | "CANCEL" | "NAVIGATE";
 
@@ -16,7 +17,7 @@ export type PhaseBResult =
   | {
       cancelled: false;
       raw_points: RawPointerEvent[];
-      selected_indexes: number[];
+      user_answer: Answer;
     }
   | {
       cancelled: true;

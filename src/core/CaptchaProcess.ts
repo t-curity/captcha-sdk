@@ -2,7 +2,6 @@ import { CaptchaClient } from "@/api/CaptchaClient";
 import { createCaptchaClient } from "@/createCaptchaClient";
 import { ClientID, SessionID } from "@/types/contracts/primitives";
 import {
-  CaptchaPayload,
   InitResponse,
   PhaseAResponse,
   PhaseBResponse,
@@ -11,8 +10,8 @@ import {
 import { PhaseAResult } from "@/types/contracts/phase-results";
 import { renderPhaseA } from "@/ui/phase/phaseA/phaseA";
 import { UserCancelledError } from "./error/UserCancelledError";
-import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
-import { createDeviceMetadata } from "@/utils/device-metadata";
+import { mapPhaseAToPayload as mapToBehavioralData } from "@/mappers/phaseA.mapper";
+import { renderPhaseB } from "@/ui/phase/PhaseB/phaseB";
 
 export class CaptchaProcess {
   private _client: CaptchaClient | null = null;
@@ -60,14 +59,19 @@ export class CaptchaProcess {
     initial: SubmitResponse,
   ): Promise<SessionID> {
     let current = initial;
+    console.log("initial", initial);
 
     while (current.success) {
-      console.log("current", current);
-
       switch (current.status) {
         case "PHASE_A":
           current = await this.handlePhaseA(session_id, current);
-          console.log("current", current);
+          //   current = {
+          //     data: {
+          //       problem: createMockPhaseBProblem(),
+          //     },
+          //     status: "PHASE_B",
+          //     success: true,
+          //   };
           break;
         case "PHASE_B":
           current = await this.handlePhaseB(session_id, current);
@@ -78,6 +82,7 @@ export class CaptchaProcess {
         default:
           throw new Error("INVALID_STATE");
       }
+      console.log("current", current);
     }
 
     throw new Error(current.error ?? "REQUEST_FAILED");
@@ -99,13 +104,13 @@ export class CaptchaProcess {
         case "ESC":
         case "CLOSE":
         case "CANCEL":
-      throw new UserCancelledError();
+          throw new UserCancelledError();
         default:
           throw new Error("AUTH_FAILED");
       }
     }
 
-    const payload = mapPhaseAToPayload(result.raw_points);
+    const payload = mapToBehavioralData(result.raw_points);
 
     console.log("PHASE_A", payload);
 
@@ -116,20 +121,29 @@ export class CaptchaProcess {
     session_id: SessionID,
     current: PhaseBResponse,
   ): Promise<SubmitResponse> {
+    console.log("handlePhaseB", current);
     const client = this.getOrCreateClient();
     const { problem } = current.data;
-    console.log("problem", problem);
+    console.log("client", client);
+    const result = await renderPhaseB(problem, {
+      debugGuideLine: true,
+    });
+    console.log("result", result);
 
-    // PHASE_B UI render
-    const payload: CaptchaPayload = {
-      points: [],
-      user_answer: [
-        "n02088364_2158",
-        "n02088364_2160",
-        "n02105641_1945",
-        "n02105641_4815",
-      ],
-      metadata: createDeviceMetadata(),
+    if (result.cancelled) {
+      switch (result.reason) {
+        case "ESC":
+        case "CLOSE":
+        case "CANCEL":
+          throw new UserCancelledError();
+        default:
+          throw new Error("AUTH_FAILED");
+      }
+    }
+
+    const payload = {
+      ...mapToBehavioralData(result.raw_points),
+      user_answer: result.user_answer,
     };
 
     console.log("PHASE_B", payload);
