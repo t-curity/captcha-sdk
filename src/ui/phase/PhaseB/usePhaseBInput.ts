@@ -105,8 +105,9 @@ export function usePhaseBInput({
     slotEls.forEach((s) => s.classList.toggle("is-hover", s === slot));
 
     if (!slot) {
-      draggingCell?.classList.add("shake");
-      setTimeout(() => draggingCell?.classList.remove("shake"), 300);
+      const _draggingCell = draggingCell;
+      _draggingCell?.classList.add("shake");
+      setTimeout(() => _draggingCell?.classList.remove("shake"), 300);
     } else if (activeImageIndex !== null) {
       applyDropToSlot(slot, activeImageIndex);
     }
