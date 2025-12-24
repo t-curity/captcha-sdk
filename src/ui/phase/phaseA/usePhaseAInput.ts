@@ -101,15 +101,26 @@ export function usePhaseAInput({
       onFail();
     }
 
-    isPressed = false;
-    activePointerId = null;
-    slot.releasePointerCapture(e.pointerId);
+    cleanupDragOnly();
   };
 
   const onPointerCancel = (e: PointerEvent) => {
     if (e.pointerId !== activePointerId) return;
-    onAbort("CANCEL");
+
+    cleanupDragOnly();
   };
+
+  function cleanupDragOnly() {
+    isPressed = false;
+
+    if (activePointerId != null) {
+      try {
+        slot.releasePointerCapture(activePointerId);
+      } catch {}
+    }
+
+    activePointerId = null;
+  }
 
   slot.addEventListener("pointerdown", onPointerDown);
   slot.addEventListener("pointermove", onPointerMove);

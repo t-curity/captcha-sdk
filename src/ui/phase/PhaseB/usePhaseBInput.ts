@@ -190,12 +190,22 @@ export function usePhaseBInput({
 
   function onPointerCancel(_e: PointerEvent) {
     cleanupPointer();
-    onAbort("CANCEL");
   }
 
-  function onWindowBlur(_e: FocusEvent) {
-    cleanupPointer();
-    onAbort("CANCEL");
+  let blurTimer: number | null = null;
+
+  function onWindowBlur() {
+    blurTimer = window.setTimeout(() => {
+      cleanupPointer();
+      onAbort("CANCEL");
+    }, 500);
+  }
+
+  function onWindowFocus() {
+    if (blurTimer) {
+      clearTimeout(blurTimer);
+      blurTimer = null;
+    }
   }
 
   function renderSlots() {
@@ -217,6 +227,7 @@ export function usePhaseBInput({
   document.addEventListener("pointerup", onPointerUp);
   document.addEventListener("pointercancel", onPointerCancel);
   window.addEventListener("blur", onWindowBlur);
+  window.addEventListener("focus", onWindowFocus);
 
   return () => {
     gridEl.removeEventListener("pointerdown", onPointerDown);
@@ -224,5 +235,6 @@ export function usePhaseBInput({
     document.removeEventListener("pointerup", onPointerUp);
     document.removeEventListener("pointercancel", onPointerCancel);
     window.removeEventListener("blur", onWindowBlur);
+    window.removeEventListener("focus", onWindowFocus);
   };
 }
