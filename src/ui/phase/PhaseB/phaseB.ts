@@ -14,6 +14,7 @@ import type {
 } from "@/types/contracts/phase-results";
 import { PhaseBProblem } from "@/types/contracts/problems";
 import { Answer } from "@/types/contracts/protocol";
+import { getOverlayShadowRoot } from "@/ui/overlay/overlay.dom";
 
 export function renderPhaseB(
   { question, grid, phase, time_limit }: PhaseBProblem,
@@ -25,13 +26,14 @@ export function renderPhaseB(
     const maxSelect = 4;
 
     const overlay = getOverlayRoot();
+    const overlayShadow = getOverlayShadowRoot();
 
     const { root, body, setPhasePercents } = createPhaseBaseDOM();
     overlay.appendChild(root);
     setPhasePercents([100, 0]);
 
-    applyShadowStyle(overlay, phaseBaseCss, "phase-base");
-    applyShadowStyle(overlay, phaseBCss, "phase-b");
+    applyShadowStyle(overlayShadow, phaseBaseCss, "phase-base");
+    applyShadowStyle(overlayShadow, phaseBCss, "phase-b");
 
     const { container, gridEl, slotEls } = createPhaseBDOM(question, maxSelect);
     body.appendChild(container);

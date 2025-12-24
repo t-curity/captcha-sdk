@@ -10,6 +10,7 @@ import { renderGuideLine } from "./renderGuideLine";
 import { usePhaseAInput } from "./usePhaseAInput";
 import { useAbortKey } from "@/ui/shell/useAbortKey";
 import { createPhaseBaseDOM } from "@/ui/shell/phase-base.dom";
+import { getOverlayShadowRoot } from "@/ui/overlay/overlay.dom";
 
 export function renderPhaseA(
   { guide_line, guide_text, image, phase, time_limit }: PhaseAProblem,
@@ -18,6 +19,7 @@ export function renderPhaseA(
   return new Promise((resolve) => {
     // Root
     const overlayRoot = getOverlayRoot();
+    const overlayShadow = getOverlayShadowRoot();
 
     // BaseRoot
     const {
@@ -37,8 +39,8 @@ export function renderPhaseA(
     setPhasePercents([100, 0]);
 
     // Style
-    applyShadowStyle(overlayRoot, phaseBaseCss, "phase-base");
-    applyShadowStyle(overlayRoot, phaseACss, "phase-a");
+    applyShadowStyle(overlayShadow, phaseBaseCss, "phase-base");
+    applyShadowStyle(overlayShadow, phaseACss, "phase-a");
 
     // 이미지
     const {
@@ -90,6 +92,7 @@ export function renderPhaseA(
       if (finished) return;
       finished = true;
       cleanup();
+      console.log("finish", result);
       resolve(result);
     }
 

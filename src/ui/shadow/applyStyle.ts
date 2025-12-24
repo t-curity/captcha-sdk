@@ -13,10 +13,29 @@ export function applyShadowStyle(
 
   if (key && set.has(key)) return;
 
-  const sheet = new CSSStyleSheet();
-  sheet.replaceSync(cssText);
+  const supportsAdopted =
+    "adoptedStyleSheets" in shadow &&
+    Array.isArray((shadow as any).adoptedStyleSheets);
 
-  shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet];
+  if (supportsAdopted) {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(cssText);
+
+    (shadow as any).adoptedStyleSheets = [
+      ...(shadow as any).adoptedStyleSheets,
+      sheet,
+    ];
+  } else {
+    // 🔹 Safari / iOS fallback
+    const style = document.createElement("style");
+    style.textContent = cssText;
+
+    if (key) {
+      style.setAttribute("data-style-key", key);
+    }
+
+    shadow.appendChild(style);
+  }
 
   if (key) set.add(key);
 }
