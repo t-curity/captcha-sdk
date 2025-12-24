@@ -9,9 +9,18 @@ export function createDeviceMetadata(): DeviceMetadata {
 }
 
 function detectDeviceType(): DeviceType {
-  const hasTouch = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
+  const hasTouch = navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
+  const hasHover = window.matchMedia("(hover: hover)").matches;
 
-  if (hasTouch) return "MOBILE";
+  if (isSmallScreen && hasTouch) {
+    return "MOBILE";
+  }
+
+  if (hasTouch && hasHover) {
+    // 터치 + 마우스 둘 다 가능한 환경
+    return "PC";
+  }
 
   return "PC";
 }
