@@ -199,12 +199,7 @@ export function usePhaseBInput({
         .querySelector(`.tc-cell[data-index="${imgIndex}"] img`)!
         .cloneNode(true) as HTMLImageElement;
 
-      const badge = document.createElement("div");
-      badge.className = "tc-slot-order";
-      badge.textContent = String(i + 1);
-
       slot.appendChild(img);
-      slot.appendChild(badge);
     });
   }
 
