@@ -11,6 +11,9 @@ export const phaseBaseHtml = `
     </div>
     <button class="tc-close" hidden>×</button>
   </header>
+
   <main class="tc-body"></main>
+  
+  <div class="tc-toast" hidden></div>
 </div>
 `;
