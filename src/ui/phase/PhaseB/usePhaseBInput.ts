@@ -1,5 +1,6 @@
 import { AbortReason } from "@/types/contracts/phase-results";
 import { mapPointerType } from "@/ui/input/mapPointerType";
+import { THEME } from "@/ui/theme";
 import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
 
 type PhaseBInputParams = {
@@ -107,12 +108,15 @@ export function usePhaseBInput({
     if (!slot) {
       const _draggingCell = draggingCell;
       _draggingCell?.classList.add("shake");
-      setTimeout(() => _draggingCell?.classList.remove("shake"), 300);
+      setTimeout(
+        () => _draggingCell?.classList.remove("shake"),
+        THEME.duration.shake,
+      );
     } else if (activeImageIndex !== null) {
       applyDropToSlot(slot, activeImageIndex);
     }
 
-    cleanupPointer(e);
+    cleanupPointer();
 
     if (slots.filter((v) => v !== null).length === maxSelect) {
       onPass({
@@ -125,7 +129,7 @@ export function usePhaseBInput({
   function moveGhost(e: PointerEvent) {
     if (!ghostEl) return;
     const rootRect = phaseRoot.getBoundingClientRect();
-    //console.log("rootRect", rootRect);
+
     ghostEl.style.left = `${e.clientX - rootRect.left - 36}px`;
     ghostEl.style.top = `${e.clientY - rootRect.top - 36}px`;
   }

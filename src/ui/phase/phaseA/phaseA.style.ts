@@ -13,19 +13,7 @@ export const phaseACss = `
   display: block;
   max-width: 480px;
 }
-
-.tc-cell.shake {
-  animation: shake 0.3s;
-}
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  50% { transform: translateX(4px); }
-  75% { transform: translateX(-4px); }
-  100% { transform: translateX(0); }
-}
-
+  
 .tc-guide-band {
   position: absolute;
   box-sizing: border-box;

@@ -71,19 +71,17 @@ export function renderPhaseA(
       ctx,
       guide_line,
       onPass: (points) => {
-        setTimeout(() => {
-          cleanup();
-          resolve({ cancelled: false, raw_points: points });
-        }, 1000);
+        finish({ cancelled: false, raw_points: points });
       },
-      onFail: () => {
-        setTimeout(() => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }, 1000);
-      },
+      onFail: () => {},
       onAbort: abort,
     });
     const cleanupKey = useAbortKey(abort);
+    const offDismiss = onOverlayDismiss(() => abort("NAVIGATE"));
+
+    function abort(reason: AbortReason) {
+      finish({ cancelled: true, reason });
+    }
 
     // Close
     let finished = false;
@@ -91,25 +89,16 @@ export function renderPhaseA(
     function finish(result: PhaseAResult) {
       if (finished) return;
       finished = true;
-      cleanup();
-      console.log("finish", result);
-      resolve(result);
-    }
 
-    function abort(reason: AbortReason) {
-      finish({ cancelled: true, reason });
-    }
-
-    const offDismiss = onOverlayDismiss(() => abort("NAVIGATE"));
-
-    // Clean up
-    function cleanup() {
       offDismiss();
       cleanupGuide?.();
       cleanupInput();
       cleanupKey();
       cleanupCanvas();
       baseRoot.remove();
+
+      console.log("finish", result);
+      resolve(result);
     }
   });
 }

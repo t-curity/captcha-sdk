@@ -66,6 +66,18 @@ export const phaseBCss = `
   opacity: 0.4;
 }
 
+.tc-cell.shake {
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+}
+
 .tc-slots {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

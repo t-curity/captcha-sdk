@@ -1,31 +1,52 @@
 import { RawPoint, RawPointerEvent } from "@/ui/types/RawPointerEventModel";
 
+type StrokeOptions = {
+  color: string | "#000";
+  lineWidth: number | 5;
+  shadowColor: string | "#000";
+  shadowBlur: number | 0;
+};
+
 export function drawStroke(
   ctx: CanvasRenderingContext2D,
   raw_points: RawPointerEvent[],
-  color: string,
+  {
+    color = "#000",
+    lineWidth = 3,
+    shadowColor = "transparent",
+    shadowBlur = 0,
+  }: Partial<StrokeOptions> = {},
 ) {
+  if (raw_points.length < 2) return;
+
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = lineWidth;
+  ctx.shadowBlur = shadowBlur;
+  ctx.shadowColor = shadowColor;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
-  let prev: RawPoint | null = null;
+  ctx.beginPath();
+
+  let isFirst = true;
 
   for (const p of raw_points) {
-    if (p.event_type !== "move" && p.event_type !== "move_out") {
-      prev = null;
-      continue;
+    if (p.event_type === "down") {
+      ctx.moveTo(p.img_p.x, p.img_p.y);
+      isFirst = false;
+    } else if (p.event_type === "move" || p.event_type === "move_out") {
+      if (isFirst) {
+        ctx.moveTo(p.img_p.x, p.img_p.y);
+        isFirst = false;
+      } else {
+        ctx.lineTo(p.img_p.x, p.img_p.y);
+      }
     }
-
-    if (prev) {
-      ctx.beginPath();
-      ctx.moveTo(prev.x, prev.y);
-      ctx.lineTo(p.img_p.x, p.img_p.y);
-      ctx.stroke();
-    }
-
-    prev = p.img_p;
   }
+
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
 }

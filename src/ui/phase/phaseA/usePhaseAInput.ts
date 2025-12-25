@@ -1,13 +1,10 @@
 import { AbortReason } from "@/types/contracts/phase-results";
 import { GuideLine } from "@/types/contracts/problems";
+import { THEME } from "@/ui/theme";
 import { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
 import { toImageCoords } from "@/utils/coords";
 import { drawStroke } from "@/utils/drawStroke";
 import { isPointInsideGuideLine } from "@/utils/guideLineMath";
-
-const COLOR_DRAW = "#000";
-const COLOR_PASS = "rgba(0,200,0,0.9)";
-const COLOR_FAIL = "rgba(255,60,60,0.9)";
 
 type PhaseAInputParams = {
   slot: HTMLElement;
@@ -34,10 +31,20 @@ export function usePhaseAInput({
   let isPressed = false;
   let activePointerId: number | null = null;
 
-  const getImgRect = () => img.getBoundingClientRect();
+  let passTimeout: number | null = null;
+  let failTimeout: number | null = null;
+
+  const clearAllTimeouts = () => {
+    if (passTimeout) clearTimeout(passTimeout);
+    if (failTimeout) clearTimeout(failTimeout);
+    passTimeout = null;
+    failTimeout = null;
+  };
 
   const onPointerDown = (e: PointerEvent) => {
     if (activePointerId !== null) return;
+
+    clearAllTimeouts();
 
     raw_points = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -46,7 +53,7 @@ export function usePhaseAInput({
     isPressed = true;
     slot.setPointerCapture(e.pointerId);
 
-    const img_p = toImageCoords(e, getImgRect());
+    const img_p = toImageCoords(e, img.getBoundingClientRect());
 
     raw_points.push({
       img_p,
@@ -62,7 +69,7 @@ export function usePhaseAInput({
   const onPointerMove = (e: PointerEvent) => {
     if (!isPressed || e.pointerId !== activePointerId) return;
 
-    const imgRect = getImgRect();
+    const imgRect = img.getBoundingClientRect();
     const img_p = toImageCoords(e, imgRect);
 
     const inside = isPointInsideGuideLine(img_p, imgRect, guide_line);
@@ -77,7 +84,12 @@ export function usePhaseAInput({
       event_type: inside ? "move" : "move_out",
     });
 
-    drawStroke(ctx, raw_points, COLOR_DRAW);
+    drawStroke(ctx, raw_points, {
+      color: THEME.color.primary,
+      lineWidth: THEME.draw.width,
+      shadowColor: THEME.draw.glow,
+      shadowBlur: THEME.draw.blur,
+    });
   };
 
   const onPointerUp = (e: PointerEvent) => {
@@ -93,12 +105,23 @@ export function usePhaseAInput({
     });
 
     const passed = raw_points.every((p) => p.event_type !== "move_out");
-    drawStroke(ctx, raw_points, passed ? COLOR_PASS : COLOR_FAIL);
+    drawStroke(ctx, raw_points, {
+      color: passed ? THEME.color.pass : THEME.color.fail,
+      lineWidth: THEME.draw.width,
+      shadowColor: passed ? THEME.draw.passGlow : THEME.draw.failGlow,
+      shadowBlur: passed ? THEME.draw.passBlur : THEME.draw.failBlur,
+    });
 
     if (passed) {
-      onPass(raw_points.slice());
+      passTimeout = window.setTimeout(() => {
+        onPass(raw_points.slice());
+      }, THEME.duration.passDraw);
     } else {
       onFail();
+      failTimeout = window.setTimeout(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        failTimeout = null;
+      }, THEME.duration.failDraw);
     }
 
     cleanupDragOnly();
@@ -128,6 +151,7 @@ export function usePhaseAInput({
   slot.addEventListener("pointercancel", onPointerCancel);
 
   return () => {
+    clearAllTimeouts();
     slot.removeEventListener("pointerdown", onPointerDown);
     slot.removeEventListener("pointermove", onPointerMove);
     slot.removeEventListener("pointerup", onPointerUp);
