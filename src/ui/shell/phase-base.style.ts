@@ -1,4 +1,3 @@
-// ui/phases/phaseA/phaseA.style.ts
 export const phaseBaseCss = `
 .tc-phase {
   background: #fff;
