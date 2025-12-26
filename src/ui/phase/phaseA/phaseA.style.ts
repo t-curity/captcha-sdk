@@ -7,11 +7,16 @@ export const phaseACss = `
 
 .tc-slot {
   position: relative;
+
+  touch-action: none;
+  user-select: none;
 }
 
 .tc-slot img {
   display: block;
   max-width: 480px;
+
+  pointer-events: none;
   -webkit-user-drag: none;
   user-select: none;
 }

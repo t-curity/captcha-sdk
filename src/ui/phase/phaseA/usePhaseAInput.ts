@@ -1,4 +1,3 @@
-import { AbortReason } from "@/types/contracts/phase-results";
 import { GuideLine } from "@/types/contracts/problems";
 import { THEME } from "@/ui/theme";
 import { RawPointerEvent } from "@/ui/input/raw";
@@ -145,8 +144,14 @@ export function usePhaseAInput({
     cleanupDragOnly();
   };
 
+  const onDragStart = (e) => {
+    e.preventDefault();
+    return false;
+  };
+
   slot.addEventListener("pointerdown", onPointerDown, { passive: false });
   slot.addEventListener("pointermove", onPointerMove, { passive: false });
+  slot.addEventListener("dragstart", onDragStart, { passive: false });
   slot.addEventListener("pointerup", onPointerUp);
   slot.addEventListener("pointercancel", onPointerCancel);
   slot.addEventListener("lostpointercapture", onLostPointerCapture);
@@ -157,6 +162,7 @@ export function usePhaseAInput({
     clearAllTimeouts();
     slot.removeEventListener("pointerdown", onPointerDown);
     slot.removeEventListener("pointermove", onPointerMove);
+    slot.removeEventListener("dragstart", onDragStart);
     slot.removeEventListener("pointerup", onPointerUp);
     slot.removeEventListener("pointercancel", onPointerCancel);
     slot.removeEventListener("lostpointercapture", onLostPointerCapture);

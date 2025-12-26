@@ -6,6 +6,8 @@ export const overlayCss = `
   display: flex;
   align-items: center;
   justify-content: center;
+
+  touch-action: none;
 }
 
 .tc-overlay-capture {
@@ -15,13 +17,14 @@ export const overlayCss = `
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 
-  touch-action: none;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .tc-overlay-stage {
   position: relative;
   z-index: 1;
   display: flex;
+
+  pointer-events: auto;
 }
 `;
