@@ -1,4 +1,4 @@
-import type { PointerEventType } from "@/types/contracts/behavior";
+import type { UIPointerEventType } from "./types";
 
 export type RawPoint = {
   x: number;
@@ -14,5 +14,5 @@ export type RawPointerEvent = {
   img_p: RawPoint;
   viewport_p: RawPoint;
   t: number;
-  event_type: PointerEventType;
+  event_type: UIPointerEventType;
 };

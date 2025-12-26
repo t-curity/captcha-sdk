@@ -1,4 +1,4 @@
-import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
+import type { RawPointerEvent } from "@/ui/input/raw";
 
 export type AbortReason = "ESC" | "CLOSE" | "CANCEL" | "TIMEOUT" | "NAVIGATE";
 export interface PhaseASuccessResult {

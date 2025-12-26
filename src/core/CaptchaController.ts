@@ -1,11 +1,10 @@
 import type { ClientID, SessionID } from "@/types/contracts/primitives";
 import { UserCancelledError } from "./error/UserCancelledError";
-import { watchInactivity } from "@/core/policy/watchInactivity";
+import { INACTIVITY_TIMEOUT_MS, watchInactivity } from "@/core/policy";
 import { InactivityTimeoutError } from "./error/InactivityTimeoutError";
 import { CaptchaProcess } from "./CaptchaProcess";
 import { getOrCreateShell } from "@/ui/shell";
 
-const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
 export class CaptchaController {
   private _in_flight: Promise<SessionID> | null = null;
 

@@ -1,30 +1,20 @@
-import { RawPoint, RawPointerEvent } from "@/ui/types/RawPointerEventModel";
-
-type StrokeOptions = {
-  color: string | "#000";
-  lineWidth: number | 5;
-  shadowColor: string | "#000";
-  shadowBlur: number | 0;
-};
+import { THEME } from "@/ui/theme";
+import { RawPointerEvent } from "@/ui/input/raw";
+import { StrokeOptions } from "./types";
 
 export function drawStroke(
   ctx: CanvasRenderingContext2D,
   raw_points: RawPointerEvent[],
-  {
-    color = "#000",
-    lineWidth = 3,
-    shadowColor = "transparent",
-    shadowBlur = 0,
-  }: Partial<StrokeOptions> = {},
+  options: StrokeOptions,
 ) {
   if (raw_points.length < 2) return;
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
-  ctx.shadowBlur = shadowBlur;
-  ctx.shadowColor = shadowColor;
+  ctx.strokeStyle = options.color;
+  ctx.lineWidth = options.lineWidth;
+  ctx.shadowBlur = options.shadowBlur;
+  ctx.shadowColor = options.shadowColor;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 

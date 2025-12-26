@@ -1,6 +1,6 @@
-import { PointerEventType } from "@/types/contracts/behavior";
+import { UIPointerEventType } from "./types";
 
-export function mapPointerType(e: PointerEvent): PointerEventType {
+export function mapPointerType(e: PointerEvent): UIPointerEventType {
   switch (e.type) {
     case "pointerdown":
       return "down";

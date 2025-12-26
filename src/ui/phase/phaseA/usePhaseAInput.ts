@@ -1,10 +1,11 @@
 import { AbortReason } from "@/types/contracts/phase-results";
 import { GuideLine } from "@/types/contracts/problems";
 import { THEME } from "@/ui/theme";
-import { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
+import { RawPointerEvent } from "@/ui/input/raw";
 import { toImageCoords } from "@/utils/coords";
-import { drawStroke } from "@/utils/drawStroke";
+import { drawStroke } from "@/ui/canvas/drawStroke";
 import { isPointInsideGuideLine } from "@/utils/guideLineMath";
+import { STROKE_PRESET } from "@/ui/canvas/strokePresets";
 
 type PhaseAInputParams = {
   slot: HTMLElement;
@@ -82,12 +83,7 @@ export function usePhaseAInput({
       event_type: inside ? "move" : "move_out",
     });
 
-    drawStroke(ctx, raw_points, {
-      color: THEME.color.primary,
-      lineWidth: THEME.draw.width,
-      shadowColor: THEME.draw.glow,
-      shadowBlur: THEME.draw.blur,
-    });
+    drawStroke(ctx, raw_points, STROKE_PRESET.normal);
   };
 
   const onPointerUp = (e: PointerEvent) => {
@@ -103,12 +99,11 @@ export function usePhaseAInput({
     });
 
     const passed = raw_points.every((p) => p.event_type !== "move_out");
-    drawStroke(ctx, raw_points, {
-      color: passed ? THEME.color.pass : THEME.color.fail,
-      lineWidth: THEME.draw.width,
-      shadowColor: passed ? THEME.draw.passGlow : THEME.draw.failGlow,
-      shadowBlur: passed ? THEME.draw.passBlur : THEME.draw.failBlur,
-    });
+    drawStroke(
+      ctx,
+      raw_points,
+      passed ? STROKE_PRESET.pass : STROKE_PRESET.fail,
+    );
 
     if (passed) {
       passTimeout = window.setTimeout(() => {

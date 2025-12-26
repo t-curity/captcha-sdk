@@ -1,6 +1,6 @@
 import { mapPointerType } from "@/ui/input/mapPointerType";
 import { THEME } from "@/ui/theme";
-import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
+import type { RawPointerEvent } from "@/ui/input/raw";
 
 type PhaseBInputParams = {
   gridEl: HTMLDivElement;

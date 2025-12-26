@@ -1,5 +1,6 @@
 import type { PointerEvent } from "@/types/contracts/behavior";
-import { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
+import { RawPointerEvent } from "@/ui/input/raw";
+import { encodePointerType } from "./encodePointer";
 
 export function toViewportPointerEvents(
   raw_points: RawPointerEvent[],
@@ -12,6 +13,6 @@ export function toViewportPointerEvents(
     p.viewport_p.x,
     p.viewport_p.y,
     p.t - start_time,
-    p.event_type,
+    encodePointerType(p.event_type),
   ]);
 }
