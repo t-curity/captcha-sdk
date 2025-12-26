@@ -98,7 +98,7 @@ export const phaseBCss = `
   border-radius: 6px;
   border: 2px solid transparent;
   border-radius: 8px;
-  background: #f5f5f5;
+  background: #cececeff;
   display: flex;
   align-items: center;
   justify-content: center;
