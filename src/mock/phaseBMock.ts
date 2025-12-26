@@ -7,8 +7,14 @@ export function createMockPhaseBProblem(): PhaseBProblem {
 
   return {
     question: "동물만 순서대로 선택하세요",
-    grid: images.map((image) => ({ image_id: image.id, image: image.image })),
+    grid: shuffle(
+      images.map((image) => ({ image_id: image.id, image: image.image })),
+    ),
     phase: "2/2",
-    time_limit: 30,
+    time_limit: 5,
   };
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
 }

@@ -7,21 +7,23 @@ export const phaseBCss = `
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;
-  touch-action: none; /* 모바일에서 스크롤/줌 방지 */
+  touch-action: none;
   --slot-size: 90px;
 }
 
 .tc-cell img {
-  pointer-events: none; /* 이벤트는 cell이 받게 */
+  pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
 }
 
 .tc-phase-b {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: #fff;
   border-radius: 8px;
+  user-select: none;
 }
 
 .tc-question {
@@ -63,7 +65,9 @@ export const phaseBCss = `
 }
 
 .tc-cell.is-used {
-  opacity: 0.4;
+  opacity: 0.3;
+  filter: grayscale(0.8);
+  cursor: default;
 }
 
 .tc-cell.shake {
@@ -92,9 +96,9 @@ export const phaseBCss = `
   position: relative;
   aspect-ratio: 1 / 1;
   border-radius: 6px;
-  border: 0px dashed #ccc;
+  border: 2px solid transparent;
   border-radius: 8px;
-  background: #cececeff;
+  background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,24 +122,9 @@ export const phaseBCss = `
   border-radius: 4px;
   display: block;
 }
-  
-.tc-slot-order {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #4caf50;
-  color: #fff;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .tc-drag-ghost {
-  position: fixed;
+  position: absolute;
   width: 72px;
   height: 72px;
   pointer-events: none;
@@ -144,7 +133,6 @@ export const phaseBCss = `
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-  position: absolute;
 }
 
 .tc-drag-ghost img {

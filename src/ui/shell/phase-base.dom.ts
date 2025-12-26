@@ -1,6 +1,6 @@
 import { phaseBaseHtml } from "./phase-base.template";
 
-export function createPhaseBaseDOM() {
+export function createPhaseBaseDOM(total_phases: number = 4) {
   // HTML → DOM
   const wrapper = document.createElement("div");
   wrapper.innerHTML = phaseBaseHtml;
@@ -23,14 +23,26 @@ export function createPhaseBaseDOM() {
   }
 
   // 진행바
+  const barsContainer = root.querySelector(".tc-phase-bars") as HTMLDivElement;
+  barsContainer.innerHTML = "";
+
+  for (let i = 0; i < total_phases; i++) {
+    const bar = document.createElement("div");
+    bar.className = "tc-phase-bar";
+    bar.innerHTML = `<div class="tc-phase-bar__fill"></div>`;
+    barsContainer.appendChild(bar);
+  }
+
   const fills = Array.from(
     root.querySelectorAll(".tc-phase-bar__fill"),
   ) as HTMLDivElement[];
 
   function setPhasePercents(percents: number[]) {
     percents.forEach((percent, index) => {
-      const p = Math.max(0, Math.min(100, percent));
-      fills[index].style.width = `${p}%`;
+      if (fills[index]) {
+        const p = Math.max(0, Math.min(100, percent));
+        fills[index].style.width = `${p}%`;
+      }
     });
   }
 

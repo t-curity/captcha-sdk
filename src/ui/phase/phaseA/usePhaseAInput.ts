@@ -14,7 +14,6 @@ type PhaseAInputParams = {
   guide_line: GuideLine;
   onPass: (points: RawPointerEvent[]) => void;
   onFail: () => void;
-  onAbort: (reason: AbortReason) => void;
 };
 
 export function usePhaseAInput({
@@ -25,7 +24,6 @@ export function usePhaseAInput({
   guide_line,
   onPass,
   onFail,
-  onAbort,
 }: PhaseAInputParams) {
   let raw_points: RawPointerEvent[] = [];
   let isPressed = false;

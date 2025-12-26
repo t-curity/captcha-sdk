@@ -1,5 +1,5 @@
 export const THEME = {
-  // 상태별 색상
+  // 상태별 색상 설정
   color: {
     primary: "#ffffff",
     pass: "#00ff00",
@@ -17,10 +17,11 @@ export const THEME = {
     failBlur: 12,
   },
 
-  // 애니메이션 시간
+  // 시간 설정
   duration: {
     passDraw: 1000,
     failDraw: 1000,
     shake: 300,
+    abortGrace: 500,
   },
 } as const;

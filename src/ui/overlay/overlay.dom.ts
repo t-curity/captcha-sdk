@@ -37,12 +37,6 @@ export function getOverlayStage(): HTMLElement {
   const stage = shadowRoot.querySelector(".tc-overlay-stage") as HTMLElement;
 
   if (!stage) throw new Error("Overlay stage not found");
-  return stage;
-}
 
-export function getOverlayShadowRoot(): ShadowRoot {
-  if (!shadowRoot) {
-    throw new Error("Overlay not initialized");
-  }
-  return shadowRoot;
+  return stage;
 }

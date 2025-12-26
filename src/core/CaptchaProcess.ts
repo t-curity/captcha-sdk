@@ -2,17 +2,18 @@ import { CaptchaClient } from "@/api/CaptchaClient";
 import { createCaptchaClient } from "@/createCaptchaClient";
 import { ClientID, SessionID } from "@/types/contracts/primitives";
 import {
-  InitResponse,
   PhaseAResponse,
   PhaseBResponse,
   SubmitResponse,
 } from "@/types/contracts/protocol";
-import { PhaseAResult } from "@/types/contracts/phase-results";
-import { renderPhaseA } from "@/ui/phase/phaseA/phaseA";
+import { renderPhaseA } from "@/ui/phase/phaseA";
 import { UserCancelledError } from "./error/UserCancelledError";
-import { mapPhaseAToPayload as mapToBehavioralData } from "@/mappers/phaseA.mapper";
-import { renderPhaseB } from "@/ui/phase/PhaseB/phaseB";
-import { withLoading } from "@/ui/loading/withLoading";
+import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
+import { mapPhaseBToPayload } from "@/mappers/phaseB.mapper";
+import { renderPhaseB } from "@/ui/phase/PhaseB";
+import { getOrCreateShell } from "@/ui/shell";
+import { createMockPhaseBProblem } from "@/mock/phaseBMock";
+import { renderLoading } from "@/ui/loading";
 
 export class CaptchaProcess {
   private _client: CaptchaClient | null = null;
@@ -21,35 +22,43 @@ export class CaptchaProcess {
     return (this._client ??= createCaptchaClient());
   }
 
-  async run(client_id: ClientID): Promise<SessionID> {
-    let session_id = await this.init(client_id);
+  async run(
+    client_id: ClientID,
+    abort_signal: AbortSignal,
+  ): Promise<SessionID> {
+    const shell = getOrCreateShell();
 
-    let res: SubmitResponse = await this.request(session_id);
+    renderLoading(shell);
 
-    return await this.captchaFlowLoop(session_id, res);
+    const session_id = await this.init(client_id);
+    const initial = await this.request(session_id);
+
+    return await this.captchaFlowLoop(session_id, initial, abort_signal);
   }
 
   private async init(client_id: ClientID): Promise<SessionID> {
+    const shell = getOrCreateShell();
     const client = this.getOrCreateClient();
-    const init_response = await withLoading(() => client.init(client_id), 0);
+    const init_response = await shell.withLoading(
+      () => client.init(client_id),
+      0,
+    );
 
     if (!init_response.success) {
       throw new Error(init_response.error ?? "INIT_FAILED");
     }
 
-    if (init_response.status !== "INIT") {
-      throw new Error("INVALID_STATE");
-    }
-
     return init_response.data.session_id;
   }
 
-  private async request(session_id: SessionID): Promise<SubmitResponse> {
+  private async request(session_id: SessionID): Promise<PhaseAResponse> {
+    const shell = getOrCreateShell();
     const client = this.getOrCreateClient();
-    let request_response = await withLoading(
+    const request_response = await shell.withLoading(
       () => client.request(session_id),
-      100,
+      0,
     );
+
     if (!request_response.success) {
       throw new Error(request_response.error ?? "REQUEST_FAILED");
     }
@@ -59,31 +68,38 @@ export class CaptchaProcess {
 
   private async captchaFlowLoop(
     session_id: SessionID,
-    initial: SubmitResponse,
+    initial: PhaseAResponse,
+    abort_signal: AbortSignal,
   ): Promise<SessionID> {
-    let current = initial;
+    let current: SubmitResponse = initial;
     console.log("initial", initial);
 
     while (current.success) {
-      switch (current.status) {
-        case "PHASE_A":
-          current = await this.handlePhaseA(session_id, current);
-          //   current = {
-          //     data: {
-          //       problem: createMockPhaseBProblem(),
-          //     },
-          //     status: "PHASE_B",
-          //     success: true,
-          //   };
-          break;
-        case "PHASE_B":
-          current = await this.handlePhaseB(session_id, current);
-          break;
-        case "COMPLETED": {
-          return session_id;
+      if (abort_signal.aborted) throw abort_signal.reason;
+
+      try {
+        switch (current.status) {
+          case "PHASE_A":
+            current = await this.handlePhaseA(session_id, current);
+            // current = {
+            //   data: {
+            //     problem: createMockPhaseBProblem(),
+            //   },
+            //   status: "PHASE_B",
+            //   success: true,
+            // };
+            break;
+          case "PHASE_B":
+            current = await this.handlePhaseB(session_id, current);
+            break;
+          case "COMPLETED": {
+            return session_id;
+          }
+          default:
+            throw new Error("INVALID_STATE");
         }
-        default:
-          throw new Error("INVALID_STATE");
+      } catch (e: any) {
+        console.log("captchaFlowLoop error: ", e);
       }
       console.log("current", current);
     }
@@ -95,14 +111,31 @@ export class CaptchaProcess {
     session_id: SessionID,
     current: PhaseAResponse,
   ): Promise<SubmitResponse> {
+    const shell = getOrCreateShell();
     const client = this.getOrCreateClient();
     const { problem } = current.data;
-    const result = await renderPhaseA(problem, {
+
+    shell.setup(problem);
+    shell.startTimer();
+
+    const result = await renderPhaseA(problem, shell, {
       debugGuideLine: true,
     });
 
     if (result.cancelled) {
       switch (result.reason) {
+        case "TIMEOUT":
+          return await shell.withLoading(
+            () =>
+              client.submit(
+                session_id,
+                mapPhaseAToPayload({
+                  cancelled: false,
+                  raw_points: [],
+                }),
+              ),
+            400,
+          );
         case "ESC":
         case "CLOSE":
         case "CANCEL":
@@ -112,11 +145,14 @@ export class CaptchaProcess {
       }
     }
 
-    const payload = mapToBehavioralData(result.raw_points);
+    const payload = mapPhaseAToPayload(result);
 
     console.log("PHASE_A", payload);
 
-    return await withLoading(() => client.submit(session_id, payload), 400);
+    return await shell.withLoading(
+      () => client.submit(session_id, payload),
+      400,
+    );
   }
 
   private async handlePhaseB(
@@ -124,15 +160,32 @@ export class CaptchaProcess {
     current: PhaseBResponse,
   ): Promise<SubmitResponse> {
     console.log("handlePhaseB", current);
+    const shell = getOrCreateShell();
     const client = this.getOrCreateClient();
     const { problem } = current.data;
-    const result = await renderPhaseB(problem, {
+
+    shell.setup(problem);
+    shell.startTimer();
+
+    const result = await renderPhaseB(problem, shell, {
       debugGuideLine: true,
     });
     console.log("result", result);
 
     if (result.cancelled) {
       switch (result.reason) {
+        case "TIMEOUT":
+          return await shell.withLoading(
+            () =>
+              client.submit(
+                session_id,
+                mapPhaseAToPayload({
+                  cancelled: false,
+                  raw_points: [],
+                }),
+              ),
+            400,
+          );
         case "ESC":
         case "CLOSE":
         case "CANCEL":
@@ -142,13 +195,12 @@ export class CaptchaProcess {
       }
     }
 
-    const payload = {
-      ...mapToBehavioralData(result.raw_points),
-      user_answer: result.user_answer,
-    };
-
+    const payload = mapPhaseBToPayload(problem.grid, result);
     console.log("PHASE_B", payload);
 
-    return await withLoading(() => client.submit(session_id, payload), 400);
+    return await shell.withLoading(
+      () => client.submit(session_id, payload),
+      400,
+    );
   }
 }
