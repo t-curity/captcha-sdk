@@ -132,8 +132,6 @@ export function usePhaseAInput({
   function cleanupDragOnly() {
     isPressed = false;
 
-    clearAllTimeouts();
-
     if (activePointerId != null) {
       try {
         slot.releasePointerCapture(activePointerId);
