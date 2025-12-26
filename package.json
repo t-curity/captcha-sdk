@@ -2,11 +2,15 @@
   "name": "tcurity-captcha-sdk",
   "version": "0.0.1",
   "private": true,
-  "main": "index.js",
-  "type": "commonjs",
+  "description": "Tcurity 2-Phase CAPTCHA SDK",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "dev": "concurrently \"vite build --watch\" \"vite preview --port 3000 --strictPort\"",
-    "build": "vite build"
+    "dev": "concurrently \"vite build --watch --mode dev\" \"vite preview --port 3000 --strictPort\"",
+    "build:dev": "vite build --mode dev",
+    "build:prod": "vite build --mode prod"
   },
   "dependencies": {},
   "devDependencies": {
@@ -15,9 +19,11 @@
     "terser": "^5.19.0",
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
+    "vite-plugin-dts": "^4.0.0",
     "esbuild": "^0.21.5",
     "postcss": "^8.5.6",
     "rollup": "^4.53.3",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "path": "^0.12.7"
   }
 }
