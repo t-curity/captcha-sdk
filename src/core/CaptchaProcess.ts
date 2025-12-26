@@ -10,7 +10,7 @@ import { renderPhaseA } from "@/ui/phase/phaseA";
 import { UserCancelledError } from "./error/UserCancelledError";
 import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
 import { mapPhaseBToPayload } from "@/mappers/phaseB.mapper";
-import { renderPhaseB } from "@/ui/phase/PhaseB";
+import { renderPhaseB } from "@/ui/phase/phaseB";
 import { getOrCreateShell } from "@/ui/shell";
 import { createMockPhaseBProblem } from "@/mock/phaseBMock";
 import { renderLoading } from "@/ui/loading";
