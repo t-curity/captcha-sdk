@@ -1,48 +1,113 @@
 # tcurity-captcha-sdk
 
-**tcurity-captcha-sdk**는 웹 애플리케이션에 T-Curity 캡차(Captcha) 서비스를 손쉽게 연동할 수 있도록 지원하는 클라이언트 사이드 SDK입니다.
+**tcurity-captcha-sdk**는 웹 애플리케이션에 **T-Curity 2-Phase CAPTCHA 서비스**를 간단히 연동할 수 있도록 제공되는 **브라우저 전용 클라이언트 사이드 SDK**입니다.
 
-## ✨ 주요 기능
+이 SDK는 **프론트엔드를 신뢰하지 않는 구조**를 전제로 설계되었으며,
+최종 검증은 반드시 **서버 간(S2S) 통신**을 통해 수행되도록 구성되어 있습니다.
 
-- **간편한 연동**: 전역 객체 `TCuritySDK`를 통해 어디서든 접근 가능합니다.
-- **비동기 처리**: `Promise` 기반으로 구현되어 검증 결과를 비동기적으로 처리할 수 있습니다.
-- **UMD 지원**: 브라우저 환경에서 `<script>` 태그로 바로 로드하여 사용할 수 있도록 UMD 포맷으로 빌드됩니다.
+---
 
-## 📦 설치 및 사용 방법
+## ✨ 주요 특징
 
-이 SDK는 빌드 후 생성되는 `sdk.js` 파일을 웹 페이지에 포함하여 사용합니다.
+- **단일 파일 SDK**
 
-### 1. 스크립트 로드
+  `<script>` 태그 하나로 바로 연동 가능 (`sdk.js`)
 
-프로젝트 빌드 결과물(`dist/sdk.js`)을 HTML 파일에 추가합니다.
+- **전역 접근 방식**
+
+  `window.TCuritySDK`를 통해 어디서든 사용 가능
+
+- **비동기 API**
+
+  `Promise` 기반 CAPTCHA 실행 흐름
+
+- **프론트 비신뢰 설계**
+
+  CAPTCHA 결과의 최종 검증은 서버(S2S)에서만 수행
+
+- **환경 분리 지원**
+
+  dev / prod / local 환경을 런타임 설정으로 제어 가능
+
+---
+
+## 📦 사용 방법
+
+### 1. SDK 로드
+
+빌드 결과물인 `sdk.js`를 HTML에 포함합니다.
 
 ```html
-<script src="./dist/sdk.js"></script>
+<script src="https://your-cdn-path/sdk.js"></script>
 ```
 
-### 2. 캡차 호출
+---
 
-window.TCuritySDK 객체를 통해 captcha 함수를 호출하여 검증을 시작합니다. clientId를 필수로 전달해야 하며, 성공 시 session_id를 반환받습니다.
+### 2. (선택) 런타임 환경 설정
 
-```JavaScript
+SDK는 실행 시점에 `window.__TCURITY__` 설정을 읽습니다.
 
-// 클라이언트 ID 설정 (필수)
-const client_id = "YOUR_CLIENT_ID";
+```html
+<script>
+  window.__TCURITY__ = {
+    mode: "prod", // local | dev | prod
+    baseUrl: "https://api.tcurity.cloud",
+    timeoutMs: 15000,
+  };
+</script>
+```
 
-// 캡차 검증 요청
-try {
-    const result = await TCuritySDK.captcha(client_id);
-    console.log("검증 성공! Session ID:", result.session_id);
+> ⚠️ 이 설정은 **보안 수단이 아닙니다.**
+> 환경 제어 목적이며, 보안은 서버(S2S)에서 보장됩니다.
 
-    // TODO: 서버로 session_id 전송
-  } catch (error) {
-    console.error("검증 실패 또는 오류 발생:", error);
+---
+
+### 3. CAPTCHA 실행
+
+```html
+<script>
+  async function runCaptcha() {
+    try {
+      const sessionId = await TCuritySDK.captcha("YOUR_CLIENT_ID");
+      console.log("CAPTCHA 성공:", sessionId);
+
+      // TODO: sessionId를 서버로 전달하여 S2S 검증 수행
+    } catch (err) {
+      console.error("CAPTCHA 실패 또는 취소:", err);
+    }
   }
+</script>
 ```
 
-## 🛠 개발 환경 설정
+---
 
-이 프로젝트는 TypeScript와 Vite를 기반으로 구성되어 있습니다.
+## 🔐 보안 모델
+
+이 SDK는 다음 원칙을 따릅니다.
+
+- 프론트엔드는 **신뢰하지 않음**
+- CAPTCHA 세션은 **서버에서만 검증**
+- 프론트는 결과를 **전달만** 함
+- CAPTCHA 통과 여부는 **S2S Verify 결과만 유효**
+
+```text
+브라우저
+  ↓
+TCuritySDK.captcha()
+  ↓
+CAPTCHA 서버 (세션 발급)
+  ↓
+session_id 반환
+  ↓
+고객사 서버 → T-Curity 서버 (S2S Verify)
+```
+
+> 프론트 요청의 URL, Origin, Header는
+> 보안 판단 기준으로 사용되지 않습니다.
+
+---
+
+## 🛠 개발 환경
 
 ### 전제 조건
 
@@ -55,15 +120,13 @@ try {
 npm install
 ```
 
-### 로컬 개발 및 테스트
-
-로컬에서 SDK를 개발하고, 로컬에 있는 다른 사이트가 이 SDK를 바로 참조할 수 있도록 개발 서버를 실행할 수 있습니다
+### 로컬 개발
 
 ```Bash
 npm run dev
 ```
 
-다른 사이트에서 SDK 참조
+다른 프로젝트에서 SDK 참조
 
 ```HTML
 <script src="http://localhost:3000/sdk.js"></script>
@@ -71,24 +134,36 @@ npm run dev
 
 ### 빌드
 
-소스 코드를 수정하고 배포용 파일을 생성하려면 아래 명령어를 실행하세요. 빌드 결과물은 dist/ 디렉토리에 생성됩니다.
-
 ```Bash
-npm run build
+npm run build:prod
 ```
 
-## 🚀 배포 (Deployment)
+결과물:
 
-이 프로젝트는 GitHub Actions를 통해 dev 브랜치에 푸시될 때마다 자동으로 빌드되어 GitHub Pages에 배포되도록 설정되어 있습니다.
+```
+dist/
+ ├─ sdk.js
+ └─ index.d.ts
+```
 
-## 📂 폴더 구조
+---
+
+## 🚀 배포
+
+- `dev` 브랜치에 push 시
+- GitHub Actions를 통해 자동 빌드
+- GitHub Pages로 배포
+
+---
+
+## 📂 프로젝트 구조
 
 ```bash
 captcha-sdk-dev\
 ├── .github/workflows/ # GitHub Actions 설정 (배포 워크플로우)
 ├── src/
 │   └── index.ts       # SDK 진입점 및 핵심 로직
-├── dist/              # 빌드 결과물 (자동 생성)
+├── dist/              # 빌드 결과물
 ├── package.json       # 프로젝트 의존성 및 스크립트
 ├── tsconfig.json      # TypeScript 설정
 ├── vite.config.ts     # Vite 번들러 설정
