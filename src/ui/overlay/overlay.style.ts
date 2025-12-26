@@ -8,6 +8,8 @@ export const overlayCss = `
   justify-content: center;
 
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .tc-overlay-capture {

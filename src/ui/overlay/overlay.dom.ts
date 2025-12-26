@@ -16,6 +16,16 @@ export function createOverlayHost(): ShadowRoot {
 
   applyShadowStyle(shadowRoot, overlayCss, "overlay");
 
+  shadowRoot.addEventListener(
+    "dragstart",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    },
+    { capture: true, passive: false },
+  );
+
   document.body.appendChild(hostEl);
   document.body.style.overflow = "hidden";
 
