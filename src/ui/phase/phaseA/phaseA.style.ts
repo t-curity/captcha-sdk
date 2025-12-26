@@ -12,6 +12,8 @@ export const phaseACss = `
 .tc-slot img {
   display: block;
   max-width: 480px;
+  -webkit-user-drag: none;
+  user-select: none;
 }
   
 .tc-guide-band {

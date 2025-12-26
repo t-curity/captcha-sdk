@@ -42,6 +42,7 @@ export function usePhaseAInput({
 
   const onPointerDown = (e: PointerEvent) => {
     if (activePointerId !== null) return;
+    e.preventDefault();
 
     clearAllTimeouts();
 
@@ -67,6 +68,7 @@ export function usePhaseAInput({
 
   const onPointerMove = (e: PointerEvent) => {
     if (!isPressed || e.pointerId !== activePointerId) return;
+    e.preventDefault();
 
     const imgRect = img.getBoundingClientRect();
     const img_p = toImageCoords(e, imgRect);
@@ -88,6 +90,7 @@ export function usePhaseAInput({
 
   const onPointerUp = (e: PointerEvent) => {
     if (e.pointerId !== activePointerId) return;
+    e.preventDefault();
 
     const last = raw_points[raw_points.length - 1];
 
@@ -129,6 +132,8 @@ export function usePhaseAInput({
   function cleanupDragOnly() {
     isPressed = false;
 
+    clearAllTimeouts();
+
     if (activePointerId != null) {
       try {
         slot.releasePointerCapture(activePointerId);
@@ -138,10 +143,17 @@ export function usePhaseAInput({
     activePointerId = null;
   }
 
-  slot.addEventListener("pointerdown", onPointerDown);
-  slot.addEventListener("pointermove", onPointerMove);
+  const onLostPointerCapture = () => {
+    cleanupDragOnly();
+  };
+
+  slot.addEventListener("pointerdown", onPointerDown, { passive: false });
+  slot.addEventListener("pointermove", onPointerMove, { passive: false });
   slot.addEventListener("pointerup", onPointerUp);
   slot.addEventListener("pointercancel", onPointerCancel);
+  slot.addEventListener("lostpointercapture", onLostPointerCapture);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointercancel", onPointerCancel);
 
   return () => {
     clearAllTimeouts();
@@ -149,5 +161,8 @@ export function usePhaseAInput({
     slot.removeEventListener("pointermove", onPointerMove);
     slot.removeEventListener("pointerup", onPointerUp);
     slot.removeEventListener("pointercancel", onPointerCancel);
+    slot.removeEventListener("lostpointercapture", onLostPointerCapture);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("pointercancel", onPointerCancel);
   };
 }

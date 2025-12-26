@@ -5,6 +5,7 @@ export function setupImageCanvas(slot: HTMLElement, image: Base64) {
   img.src = `data:image/png;base64,${image}`;
   img.style.userSelect = "none";
   img.draggable = false;
+  img.addEventListener("dragstart", (e) => e.preventDefault());
 
   const canvas = document.createElement("canvas");
   canvas.style.position = "absolute";
