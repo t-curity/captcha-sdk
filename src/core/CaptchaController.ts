@@ -4,6 +4,7 @@ import { INACTIVITY_TIMEOUT_MS, watchInactivity } from "@/core/policy";
 import { InactivityTimeoutError } from "./error/InactivityTimeoutError";
 import { CaptchaProcess } from "./CaptchaProcess";
 import { getOrCreateShell } from "@/ui/shell";
+import { getOrCreateToast } from "@/ui/toast";
 
 export class CaptchaController {
   private _in_flight: Promise<SessionID> | null = null;
@@ -35,6 +36,9 @@ export class CaptchaController {
         }
       },
     });
+
+    const toast = getOrCreateToast(shell);
+
     const abort_watcher = new Promise<never>((_, reject) => {
       signal.addEventListener("abort", () => reject(signal.reason), {
         once: true,
@@ -54,6 +58,7 @@ export class CaptchaController {
     } finally {
       stopInactivityWatch(); // 이벤트 리스너 제거
       shell.cleanup(); // 쉘 리소스 정리 (로딩, 타이머 등)
+      toast.cleanup();
     }
   }
 }

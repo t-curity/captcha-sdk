@@ -2,8 +2,8 @@ export const phaseBCss = `
 .tc-phase-b,
 .tc-grid,
 .tc-cell,
-.tc-slots,
-.tc-slot {
+.tc-phase-b-slots,
+.tc-phase-b-slot {
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;
@@ -82,7 +82,7 @@ export const phaseBCss = `
   100% { transform: translateX(0); }
 }
 
-.tc-slots {
+.tc-phase-b-slots {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-auto-rows: 1fr;
@@ -92,7 +92,7 @@ export const phaseBCss = `
   border-radius: 8px;
 }
 
-.tc-slot {
+.tc-phase-b-slot {
   position: relative;
   aspect-ratio: 1 / 1;
   border-radius: 6px;
@@ -110,12 +110,12 @@ export const phaseBCss = `
   overflow: hidden;
 }
 
-.tc-slot.is-hover {
+.tc-phase-b-slot.is-hover {
   border-color: #4caf50;
   background: #f0fff4;
 }
 
-.tc-slot img {
+.tc-phase-b-slot img {
   width: 100%;
   height: 100%;
   object-fit: cover;

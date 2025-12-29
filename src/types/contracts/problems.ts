@@ -8,6 +8,7 @@ import type {
 
 export type GuideLine = NormalizedLine & {
   width: number; // 0..1 (전체 허용 폭)
+  min_progress_threshold?: number; // 0..1
 };
 
 export type Problem = {

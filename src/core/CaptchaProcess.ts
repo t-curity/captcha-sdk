@@ -12,11 +12,13 @@ import { mapPhaseAToPayload } from "@/mappers/phaseA.mapper";
 import { mapPhaseBToPayload } from "@/mappers/phaseB.mapper";
 import { renderPhaseB } from "@/ui/phase/phaseB";
 import { getOrCreateShell } from "@/ui/shell";
-import { createMockPhaseBProblem } from "@/mock/phaseBMock";
+// import { createMockPhaseBProblem } from "@/mock/phaseBMock";
 import { renderLoading } from "@/ui/loading";
+import { getOrCreateToast, Toast } from "@/ui/toast";
 
 export class CaptchaProcess {
   private _client: CaptchaClient | null = null;
+  private toast: Toast | null = null;
 
   private getOrCreateClient(): CaptchaClient {
     return (this._client ??= createCaptchaClient());
@@ -29,6 +31,8 @@ export class CaptchaProcess {
     const shell = getOrCreateShell();
 
     renderLoading(shell);
+
+    this.toast = getOrCreateToast(shell);
 
     const session_id = await this.init(client_id);
     const initial = await this.request(session_id);
@@ -81,6 +85,9 @@ export class CaptchaProcess {
         switch (current.status) {
           case "PHASE_A":
             current = await this.handlePhaseA(session_id, current);
+            if (current.success && current.status === "PHASE_A") {
+              this.toast?.showToast("다시 시도해주세요.");
+            }
             // current = {
             //   data: {
             //     problem: createMockPhaseBProblem(),
@@ -90,7 +97,11 @@ export class CaptchaProcess {
             // };
             break;
           case "PHASE_B":
+            // current.data.problem = createMockPhaseBProblem();
             current = await this.handlePhaseB(session_id, current);
+            if (current.success && current.status === "PHASE_B") {
+              this.toast?.showToast("다시 시도해주세요.");
+            }
             break;
           case "COMPLETED": {
             return session_id;
@@ -118,24 +129,18 @@ export class CaptchaProcess {
     shell.setup(problem);
     shell.startTimer();
 
-    const result = await renderPhaseA(problem, shell, {
+    let result = await renderPhaseA(problem, shell, {
       debugGuideLine: true,
     });
 
     if (result.cancelled) {
       switch (result.reason) {
         case "TIMEOUT":
-          return await shell.withLoading(
-            () =>
-              client.submit(
-                session_id,
-                mapPhaseAToPayload({
-                  cancelled: false,
-                  raw_points: [],
-                }),
-              ),
-            400,
-          );
+          result = {
+            cancelled: false,
+            raw_points: [],
+          };
+          break;
         case "ESC":
         case "CLOSE":
         case "CANCEL":
@@ -167,7 +172,7 @@ export class CaptchaProcess {
     shell.setup(problem);
     shell.startTimer();
 
-    const result = await renderPhaseB(problem, shell, {
+    let result = await renderPhaseB(problem, shell, {
       debugGuideLine: true,
     });
     console.log("result", result);
@@ -175,17 +180,12 @@ export class CaptchaProcess {
     if (result.cancelled) {
       switch (result.reason) {
         case "TIMEOUT":
-          return await shell.withLoading(
-            () =>
-              client.submit(
-                session_id,
-                mapPhaseAToPayload({
-                  cancelled: false,
-                  raw_points: [],
-                }),
-              ),
-            400,
-          );
+          result = {
+            cancelled: false,
+            raw_points: [],
+            selecteds: [],
+          };
+          break;
         case "ESC":
         case "CLOSE":
         case "CANCEL":

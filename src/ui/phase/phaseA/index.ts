@@ -6,6 +6,7 @@ import { setupImageCanvas } from "@/ui/utils/setupImageCanvas";
 import { renderGuideLine } from "./renderGuideLine";
 import { usePhaseAInput } from "./usePhaseAInput";
 import { phaseBaseShell } from "@/ui/shell";
+import { getOrCreateToast } from "@/ui/toast";
 
 export function renderPhaseA(
   { guide_line, guide_text, image, phase, time_limit }: PhaseAProblem,
@@ -19,6 +20,8 @@ export function renderPhaseA(
 
     // Style
     shell.applyStyle(phaseACss, "phase-a");
+
+    const toast = getOrCreateToast(shell);
 
     // 이미지
     const {
@@ -54,7 +57,16 @@ export function renderPhaseA(
         shell.stopTimer();
         finish({ cancelled: false, raw_points: points });
       },
-      onFail: () => {
+      onFail: (reason) => {
+        console.log(reason);
+        switch (reason) {
+          case "OUT_OF_GUIDE":
+            toast.showToast("영역을 벗어났습니다.");
+            break;
+          case "TOO_SHORT":
+            toast.showToast("끝까지 그어주세요.");
+            break;
+        }
         //shell.resetTimer();
       },
     });
