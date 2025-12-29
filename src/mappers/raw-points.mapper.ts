@@ -7,6 +7,8 @@ export function toViewportPointerEvents(
 ): PointerEvent[] {
   console.log("raw_points", raw_points);
 
+  if (!raw_points?.length) return [];
+
   const start_time = raw_points[0].t;
 
   return raw_points.map((p) => [
