@@ -1,3 +1,3 @@
 export const toastHtml = `
-<div class="tc-toast" hidden></div>
+<div class="tc-toast"></div>
 `;
