@@ -5,7 +5,10 @@ import { getEventCoords, toImageCoords } from "@/utils/coords";
 import { drawStroke } from "@/ui/canvas/drawStroke";
 import { STROKE_PRESET } from "@/ui/canvas/strokePresets";
 import { StrokeManager } from "../../../utils/StrokeManager";
-import { isPointInsideGuideLine } from "@/utils/guideLineMath";
+import {
+  calculateProgress,
+  isPointInsideGuideLine,
+} from "@/utils/guideLineMath";
 
 type PhaseAInputParams = {
   slot: HTMLElement;
@@ -14,7 +17,7 @@ type PhaseAInputParams = {
   ctx: CanvasRenderingContext2D;
   guide_line: GuideLine;
   onPass: (points: RawPointerEvent[]) => void;
-  onFail: () => void;
+  onFail: (reason: "OUT_OF_GUIDE" | "TOO_SHORT") => void;
 };
 
 export function usePhaseAInput({
@@ -89,9 +92,17 @@ export function usePhaseAInput({
     );
 
     if (result) {
-      const passed =
+      const isAlwaysInside =
         !isCancelled &&
         result.current.every((p) => p.event_type !== "move_out");
+
+      const passed =
+        isAlwaysInside &&
+        calculateProgress(
+          result.current,
+          img.getBoundingClientRect(),
+          guide_line,
+        ) >= 0.8;
 
       drawStroke(
         ctx,
@@ -105,7 +116,9 @@ export function usePhaseAInput({
           THEME.duration.passDraw,
         );
       } else {
-        onFail();
+        const reason = !isAlwaysInside ? "OUT_OF_GUIDE" : "TOO_SHORT";
+
+        onFail(reason);
         manager.clear();
         failTimeout = window.setTimeout(() => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
