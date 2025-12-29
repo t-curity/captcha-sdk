@@ -1,10 +1,9 @@
-import { applyShadowStyle } from "../shadow/applyStyle";
+import { applyShadowStyle, removeShadowStyle } from "../shadow/applyStyle";
 import { createPhaseBaseDOM } from "./phase-base.dom";
 import { AbortReason } from "@/types/contracts/phase-results";
 import { phaseBaseCss } from "./phase-base.style";
-import { onOverlayDismiss } from "../overlay/overlay.events";
 import { useAbortObservers } from "./useAbortKey";
-import { hideOverlay, showOverlay } from "../overlay";
+import { hideOverlay, showOverlay, onOverlayDismiss } from "../overlay";
 import { Problem } from "@/types/contracts/problems";
 
 export interface phaseBaseShell {
@@ -16,6 +15,7 @@ export interface phaseBaseShell {
   showLoading: () => void;
   hideLoading: () => void;
   applyStyle: (css: string, id: string) => void;
+  removeStyle: (id: string) => void;
   setup: (problem: Problem) => void;
   startTimer: () => void;
   resetTimer: () => void;
@@ -116,6 +116,9 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
     applyStyle: (css: string, id: string) => {
       applyShadowStyle(shadow, css, id);
     },
+    removeStyle: (id: string) => {
+      removeShadowStyle(shadow, id);
+    },
     setup: (problem) => {
       const [current_phase, total_phases] = problem.phase
         .split("/")
@@ -171,6 +174,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
     cleanup: () => {
       loadingEl?.remove();
       shellInstance?.stopTimer();
+      shellInstance?.removeStyle("phase-base");
       cleanupObservers();
       offDismiss();
       root.remove();
