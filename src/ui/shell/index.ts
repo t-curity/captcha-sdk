@@ -10,8 +10,10 @@ export interface phaseBaseShell {
   root: HTMLElement;
   body: HTMLElement;
   mount: (content: HTMLElement) => void;
-  mountLoading: (layer: HTMLElement) => void;
+  mountLoading: (el: HTMLElement) => void;
   unmountLoading: () => void;
+  mountToast: (el: HTMLElement) => void;
+  unmountToast: () => void;
   showLoading: () => void;
   hideLoading: () => void;
   applyStyle: (css: string, id: string) => void;
@@ -48,6 +50,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
 
   // 부품
   let loadingEl: HTMLElement | null = null;
+  let toastEl: HTMLElement | null = null;
   let body: HTMLElement;
   let setPhasePercents: (percents: number[]) => void;
 
@@ -95,6 +98,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
       body.appendChild(content);
     },
     mountLoading: (el: HTMLElement) => {
+      console.log("mountLoading", el);
       if (loadingEl) loadingEl.remove();
       loadingEl = el;
       loadingEl.style.display = "none";
@@ -105,6 +109,20 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
       if (loadingEl) {
         loadingEl.remove();
         loadingEl = null;
+      }
+    },
+
+    mountToast: (el: HTMLElement) => {
+      console.log("mountToast", el);
+      if (toastEl) toastEl.remove();
+      toastEl = el;
+      root.appendChild(toastEl);
+    },
+    unmountToast: () => {
+      console.log("unmountToast", toastEl);
+      if (toastEl) {
+        toastEl.remove();
+        toastEl = null;
       }
     },
     showLoading: () => {
@@ -131,6 +149,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
       const dom = createPhaseBaseDOM(total_phases);
       root.innerHTML = "";
       if (loadingEl) root.appendChild(loadingEl);
+      if (toastEl) root.appendChild(toastEl);
       root.appendChild(dom.root);
 
       body = dom.body;
