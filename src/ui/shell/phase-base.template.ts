@@ -13,7 +13,5 @@ export const phaseBaseHtml = `
   </header>
 
   <main class="tc-body"></main>
-  
-  <div class="tc-toast" hidden></div>
 </div>
 `;
