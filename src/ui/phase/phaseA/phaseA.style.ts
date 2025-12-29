@@ -5,14 +5,14 @@ export const phaseACss = `
   border-radius: 8px;
 }
 
-.tc-slot {
+.tc-phase-a-slot {
   position: relative;
 
   touch-action: none;
   user-select: none;
 }
 
-.tc-slot img {
+.tc-phase-a-slot img {
   display: block;
   max-width: 480px;
 

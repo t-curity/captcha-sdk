@@ -14,7 +14,9 @@ export function createPhaseBDOM(
 
   const questionEl = container.querySelector(".tc-question") as HTMLDivElement;
   const gridEl = container.querySelector(".tc-grid") as HTMLDivElement;
-  const slotsEl = container.querySelector(".tc-slots") as HTMLDivElement;
+  const slotsEl = container.querySelector(
+    ".tc-phase-b-slots",
+  ) as HTMLDivElement;
 
   if (!questionEl || !gridEl || !slotsEl) {
     throw new Error("phaseB DOM structure mismatch");
@@ -45,7 +47,7 @@ export function createPhaseBDOM(
   const slotEls: HTMLDivElement[] = [];
   for (let i = 0; i < slotCount; i++) {
     const slot = document.createElement("div");
-    slot.className = "tc-slot";
+    slot.className = "tc-phase-b-slot";
     slot.dataset.slot = String(i);
     slotsEl.appendChild(slot);
     slotEls.push(slot);
