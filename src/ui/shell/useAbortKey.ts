@@ -1,6 +1,7 @@
 import { AbortReason } from "@/types/contracts/phase-results";
+import { THEME } from "../theme";
 
-export function useAbortKey(onAbort: (reason: AbortReason) => void) {
+export function useAbortObservers(onAbort: (reason: AbortReason) => void) {
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
       onAbort("ESC");

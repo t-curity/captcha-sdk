@@ -7,25 +7,20 @@ export const phaseACss = `
 
 .tc-slot {
   position: relative;
+
+  touch-action: none;
+  user-select: none;
 }
 
 .tc-slot img {
   display: block;
   max-width: 480px;
-}
 
-.tc-cell.shake {
-  animation: shake 0.3s;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  50% { transform: translateX(4px); }
-  75% { transform: translateX(-4px); }
-  100% { transform: translateX(0); }
-}
-
+  
 .tc-guide-band {
   position: absolute;
   box-sizing: border-box;

@@ -1,4 +1,6 @@
-export type CaptchaMode = "dev" | "local" | "prod";
+export type CaptchaMode = "local" | "dev" | "prod";
+
+const ALLOWED_MODES: CaptchaMode[] = ["local", "dev", "prod"];
 
 export type CaptchaEnv = {
   mode: CaptchaMode;
@@ -12,26 +14,33 @@ declare global {
   }
 }
 
-export function getEnv(): CaptchaEnv {
-  if (window.__TCURITY__?.baseUrl) {
-    return {
-      mode: window.__TCURITY__.mode ?? "prod",
-      baseUrl: window.__TCURITY__.baseUrl,
-      timeoutMs: window.__TCURITY__.timeoutMs ?? 15_000,
-    };
+function normalizeMode(mode: unknown): CaptchaMode {
+  if (ALLOWED_MODES.includes(mode as CaptchaMode)) {
+    return mode as CaptchaMode;
   }
+  return "prod";
+}
 
-  if (import.meta.env?.VITE_TCURITY_BASE_URL) {
-    return {
-      mode: (import.meta.env.VITE_TCURITY_MODE as CaptchaMode) ?? "prod",
-      baseUrl: import.meta.env.VITE_TCURITY_BASE_URL,
-      timeoutMs: Number(import.meta.env.VITE_TCURITY_TIMEOUT_MS) || 15_000,
-    };
+function normalizeBaseUrl(baseUrl: unknown): string {
+  if (typeof baseUrl !== "string") return "";
+
+  // 상대 경로 허용 (/api)
+  if (baseUrl.startsWith("/")) return baseUrl;
+
+  try {
+    const url = new URL(baseUrl);
+    return url.origin;
+  } catch {
+    return "https://tcurity.cloud";
   }
+}
+
+export function getEnv() {
+  const raw = window.__TCURITY__ ?? {};
 
   return {
-    mode: "prod",
-    baseUrl: "https://api.tcurity.io",
-    timeoutMs: 15_000,
+    mode: normalizeMode(raw.mode),
+    baseUrl: normalizeBaseUrl(raw.baseUrl),
+    timeoutMs: typeof raw.timeoutMs === "number" ? raw.timeoutMs : 15_000,
   };
 }

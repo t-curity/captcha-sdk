@@ -1,6 +1,11 @@
+import { ImageGrid } from "@/types/contracts/primitives";
 import { phaseBHtml } from "./phaseB.template";
 
-export function createPhaseBDOM(question: string, slotCount: number = 4) {
+export function createPhaseBDOM(
+  question: string,
+  grid: ImageGrid,
+  slotCount: number = 4,
+) {
   const wrapper = document.createElement("div");
   wrapper.innerHTML = phaseBHtml;
 
@@ -15,8 +20,28 @@ export function createPhaseBDOM(question: string, slotCount: number = 4) {
     throw new Error("phaseB DOM structure mismatch");
   }
 
+  // Question
   questionEl.textContent = question;
 
+  // Grid
+  grid.forEach((item, idx) => {
+    const cell = document.createElement("div");
+    cell.className = "tc-cell";
+    cell.dataset.index = String(idx);
+
+    const img = document.createElement("img");
+    img.src = item.image.startsWith("data:")
+      ? item.image
+      : `data:image/jpeg;base64,${item.image}`;
+
+    img.draggable = false;
+    img.addEventListener("dragstart", (ev) => ev.preventDefault());
+
+    cell.appendChild(img);
+    gridEl.appendChild(cell);
+  });
+
+  // Slots
   const slotEls: HTMLDivElement[] = [];
   for (let i = 0; i < slotCount; i++) {
     const slot = document.createElement("div");

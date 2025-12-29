@@ -16,6 +16,16 @@ export function createOverlayHost(): ShadowRoot {
 
   applyShadowStyle(shadowRoot, overlayCss, "overlay");
 
+  shadowRoot.addEventListener(
+    "dragstart",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    },
+    { capture: true, passive: false },
+  );
+
   document.body.appendChild(hostEl);
   document.body.style.overflow = "hidden";
 
@@ -37,12 +47,6 @@ export function getOverlayStage(): HTMLElement {
   const stage = shadowRoot.querySelector(".tc-overlay-stage") as HTMLElement;
 
   if (!stage) throw new Error("Overlay stage not found");
-  return stage;
-}
 
-export function getOverlayShadowRoot(): ShadowRoot {
-  if (!shadowRoot) {
-    throw new Error("Overlay not initialized");
-  }
-  return shadowRoot;
+  return stage;
 }

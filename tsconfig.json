@@ -4,7 +4,6 @@
     "module": "ESNext",
     "baseUrl": ".",
     "strict": true,
-    "declaration": false,
     "outDir": "dist",
     "moduleResolution": "Node",
     "resolveJsonModule": true,

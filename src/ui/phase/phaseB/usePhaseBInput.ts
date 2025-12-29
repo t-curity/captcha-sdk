@@ -1,21 +1,19 @@
-import { AbortReason } from "@/types/contracts/phase-results";
 import { mapPointerType } from "@/ui/input/mapPointerType";
-import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
+import { THEME } from "@/ui/theme";
+import type { RawPointerEvent } from "@/ui/input/raw";
 
 type PhaseBInputParams = {
   gridEl: HTMLDivElement;
   slotEls: HTMLElement[];
-  maxSelect: number;
+  max_answer: number;
   onPass: (data: { selected: number[]; raw_points: RawPointerEvent[] }) => void;
-  onAbort: (reason: AbortReason) => void;
 };
 
 export function usePhaseBInput({
   gridEl,
   slotEls,
-  maxSelect,
+  max_answer,
   onPass,
-  onAbort,
 }: PhaseBInputParams) {
   const slots: Array<number | null> = new Array(slotEls.length).fill(null);
   const segments: RawPointerEvent[][] = [];
@@ -84,13 +82,7 @@ export function usePhaseBInput({
     push(e);
     moveGhost(e);
 
-    // 슬롯 hover 표시function onPointerMove(e: PointerEvent) {
-    if (e.pointerId !== activePointerId || !currentSegment) return;
-    e.preventDefault();
-
-    push(e);
-    moveGhost(e);
-
+    // 슬롯 hover 표시
     const slot = findSlotByPoint(e.clientX, e.clientY);
     slotEls.forEach((s) => s.classList.toggle("is-hover", s === slot));
   }
@@ -102,21 +94,24 @@ export function usePhaseBInput({
     segments.push(currentSegment);
 
     const slot = findSlotByPoint(e.clientX, e.clientY);
-    slotEls.forEach((s) => s.classList.toggle("is-hover", s === slot));
 
     if (!slot) {
       const _draggingCell = draggingCell;
       _draggingCell?.classList.add("shake");
-      setTimeout(() => _draggingCell?.classList.remove("shake"), 300);
+      setTimeout(
+        () => _draggingCell?.classList.remove("shake"),
+        THEME.duration.shake,
+      );
     } else if (activeImageIndex !== null) {
       applyDropToSlot(slot, activeImageIndex);
     }
 
-    cleanupPointer(e);
+    cleanupPointer();
 
-    if (slots.filter((v) => v !== null).length === maxSelect) {
+    const selectedIndexes = slots.filter((v): v is number => v !== null);
+    if (selectedIndexes.length === max_answer) {
       onPass({
-        selected: slots.filter((v) => v !== null) as number[],
+        selected: selectedIndexes,
         raw_points: segments.flat(),
       });
     }
@@ -125,7 +120,7 @@ export function usePhaseBInput({
   function moveGhost(e: PointerEvent) {
     if (!ghostEl) return;
     const rootRect = phaseRoot.getBoundingClientRect();
-    //console.log("rootRect", rootRect);
+
     ghostEl.style.left = `${e.clientX - rootRect.left - 36}px`;
     ghostEl.style.top = `${e.clientY - rootRect.top - 36}px`;
   }
@@ -192,22 +187,6 @@ export function usePhaseBInput({
     cleanupPointer();
   }
 
-  let blurTimer: number | null = null;
-
-  function onWindowBlur() {
-    blurTimer = window.setTimeout(() => {
-      cleanupPointer();
-      onAbort("CANCEL");
-    }, 500);
-  }
-
-  function onWindowFocus() {
-    if (blurTimer) {
-      clearTimeout(blurTimer);
-      blurTimer = null;
-    }
-  }
-
   function renderSlots() {
     slotEls.forEach((slot, i) => {
       slot.innerHTML = "";
@@ -226,15 +205,12 @@ export function usePhaseBInput({
   gridEl.addEventListener("pointermove", onPointerMove);
   document.addEventListener("pointerup", onPointerUp);
   document.addEventListener("pointercancel", onPointerCancel);
-  window.addEventListener("blur", onWindowBlur);
-  window.addEventListener("focus", onWindowFocus);
 
   return () => {
+    cleanupPointer();
     gridEl.removeEventListener("pointerdown", onPointerDown);
     gridEl.removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("pointerup", onPointerUp);
     document.removeEventListener("pointercancel", onPointerCancel);
-    window.removeEventListener("blur", onWindowBlur);
-    window.removeEventListener("focus", onWindowFocus);
   };
 }

@@ -1,25 +1,22 @@
-import type { RawPointerEvent } from "@/ui/types/RawPointerEventModel";
-import { Answer } from "./protocol";
+import type { RawPointerEvent } from "@/ui/input/raw";
 
-export type AbortReason = "ESC" | "CLOSE" | "CANCEL" | "NAVIGATE";
+export type AbortReason = "ESC" | "CLOSE" | "CANCEL" | "TIMEOUT" | "NAVIGATE";
+export interface PhaseASuccessResult {
+  cancelled: false;
+  raw_points: RawPointerEvent[];
+}
 
-export type PhaseAResult =
-  | {
-      cancelled: false;
-      raw_points: RawPointerEvent[];
-    }
-  | {
-      cancelled: true;
-      reason: AbortReason;
-    };
+export interface PhaseBSuccessResult {
+  cancelled: false;
+  raw_points: RawPointerEvent[];
+  selecteds: number[];
+}
 
-export type PhaseBResult =
-  | {
-      cancelled: false;
-      raw_points: RawPointerEvent[];
-      user_answer: Answer;
-    }
-  | {
-      cancelled: true;
-      reason: AbortReason;
-    };
+export interface PhaseCancelledResult {
+  cancelled: true;
+  reason: AbortReason;
+}
+
+export type PhaseAResult = PhaseASuccessResult | PhaseCancelledResult;
+
+export type PhaseBResult = PhaseBSuccessResult | PhaseCancelledResult;
