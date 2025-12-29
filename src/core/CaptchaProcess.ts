@@ -118,24 +118,18 @@ export class CaptchaProcess {
     shell.setup(problem);
     shell.startTimer();
 
-    const result = await renderPhaseA(problem, shell, {
+    let result = await renderPhaseA(problem, shell, {
       debugGuideLine: true,
     });
 
     if (result.cancelled) {
       switch (result.reason) {
         case "TIMEOUT":
-          return await shell.withLoading(
-            () =>
-              client.submit(
-                session_id,
-                mapPhaseAToPayload({
-                  cancelled: false,
-                  raw_points: [],
-                }),
-              ),
-            400,
-          );
+          result = {
+            cancelled: false,
+            raw_points: [],
+          };
+          break;
         case "ESC":
         case "CLOSE":
         case "CANCEL":
@@ -167,7 +161,7 @@ export class CaptchaProcess {
     shell.setup(problem);
     shell.startTimer();
 
-    const result = await renderPhaseB(problem, shell, {
+    let result = await renderPhaseB(problem, shell, {
       debugGuideLine: true,
     });
     console.log("result", result);
@@ -175,17 +169,12 @@ export class CaptchaProcess {
     if (result.cancelled) {
       switch (result.reason) {
         case "TIMEOUT":
-          return await shell.withLoading(
-            () =>
-              client.submit(
-                session_id,
-                mapPhaseAToPayload({
-                  cancelled: false,
-                  raw_points: [],
-                }),
-              ),
-            400,
-          );
+          result = {
+            cancelled: false,
+            raw_points: [],
+            selecteds: [],
+          };
+          break;
         case "ESC":
         case "CLOSE":
         case "CANCEL":
