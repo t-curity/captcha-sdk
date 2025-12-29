@@ -1,39 +1,43 @@
-import { phaseBaseHtml } from "./toast.template";
+import { toastHtml } from "./toast.template";
 
 export function createToastDOM() {
   // HTML → DOM
   const wrapper = document.createElement("div");
-  wrapper.innerHTML = phaseBaseHtml;
+  wrapper.innerHTML = toastHtml;
 
-  const root = wrapper.firstElementChild as HTMLDivElement;
-  if (!root) {
-    throw new Error("phaseBaseHtml root not found");
+  const container = wrapper.firstElementChild as HTMLDivElement;
+  if (!container) {
+    throw new Error("toastHtml container not found");
   }
 
   // Toast
-  const toast = root.querySelector(".tc-toast") as HTMLDivElement;
+  const toast = container.querySelector(".tc-toast") as HTMLDivElement;
+  if (!toast) {
+    throw new Error(".tc-toast container not found in toastHtml");
+  }
 
-  // 토스트 띄우는 헬퍼 함수
-  const showToast = (message: string, duration = 3000) => {
+  const showToast = (
+    message: string,
+    duration = 3000,
+    hidden_duration = 300,
+  ) => {
     toast.textContent = message;
     toast.hidden = false;
 
-    // 애니메이션을 위해 약간의 지연 후 클래스 추가
     requestAnimationFrame(() => {
       toast.classList.add("show");
     });
 
     setTimeout(() => {
       toast.classList.remove("show");
-      // 페이드아웃 끝난 뒤 hidden 처리
       setTimeout(() => {
         toast.hidden = true;
-      }, 300);
+      }, hidden_duration);
     }, duration);
   };
 
   return {
-    root,
+    container,
     showToast,
   };
 }

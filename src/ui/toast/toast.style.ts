@@ -1,4 +1,4 @@
-export const phaseBaseCss = `
+export const toastCss = `
 .tc-toast {
   position: absolute;
   bottom: 40px;            /* 바닥에서 살짝 띄움 */
