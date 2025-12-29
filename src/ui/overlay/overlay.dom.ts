@@ -1,9 +1,8 @@
 import { overlayTemplate } from "./overlay.template";
-import { applyShadowStyle } from "@/ui/shadow/applyStyle";
-import { overlayCss } from "./overlay.style";
 
 let hostEl: HTMLDivElement | null = null;
 let shadowRoot: ShadowRoot | null = null;
+let originalOverflow = "";
 
 export function createOverlayHost(): ShadowRoot {
   if (hostEl) return shadowRoot!;
@@ -14,31 +13,24 @@ export function createOverlayHost(): ShadowRoot {
   shadowRoot = hostEl.attachShadow({ mode: "open" });
   shadowRoot.innerHTML = overlayTemplate;
 
-  applyShadowStyle(shadowRoot, overlayCss, "overlay");
-
-  shadowRoot.addEventListener(
-    "dragstart",
-    (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    },
-    { capture: true, passive: false },
-  );
-
   document.body.appendChild(hostEl);
+
+  originalOverflow = document.body.style.overflow;
   document.body.style.overflow = "hidden";
 
   return shadowRoot;
 }
 
-export function destroyOverlayHost() {
+export function destroyOverlayHost(destroy: (ShadowRoot: ShadowRoot) => void) {
   if (!hostEl) return;
 
+  if (shadowRoot) {
+    destroy(shadowRoot);
+    shadowRoot = null;
+  }
   hostEl.remove();
   hostEl = null;
-  shadowRoot = null;
-  document.body.style.overflow = "";
+  document.body.style.overflow = originalOverflow;
 }
 
 export function getOverlayStage(): HTMLElement {
