@@ -123,6 +123,29 @@ export const phaseBCss = `
   display: block;
 }
 
+.tc-phase-b-slot.has-image:hover::after {
+  content: '✕';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: opacity 0.2s;
+}
+
+.tc-return-flight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  transition: left 0.3s ease-in-out, top 0.4s ease-in-out, width 0.4s ease-in-out, height 0.4s ease-in-out, opacity 0.4s ease;
+  will-change: left, top, width, height;
+}
+
 .tc-drag-ghost {
   position: absolute;
   width: 72px;

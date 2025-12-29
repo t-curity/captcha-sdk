@@ -132,6 +132,7 @@ export function usePhaseBInput({
         `.tc-cell[data-index="${prevImageIndex}"]`,
       );
       prevCell?.classList.remove("is-used");
+      triggerReturnFlight(slotIndex, prevImageIndex);
     }
 
     slots[slotIndex] = imageIndex;
@@ -161,16 +162,98 @@ export function usePhaseBInput({
     slotEls.forEach((slot, i) => {
       slot.innerHTML = "";
       const imgIndex = slots[i];
-      if (imgIndex == null) return;
+
+      if (imgIndex == null) {
+        slot.classList.remove("has-image");
+        slot.onclick = null;
+        return;
+      }
+
+      slot.classList.add("has-image");
 
       const originalImg = gridEl.querySelector(
         `.tc-cell[data-index="${imgIndex}"] img`,
       );
 
       if (originalImg) {
-        slot.appendChild(originalImg.cloneNode(true));
+        const clone = originalImg.cloneNode(true) as HTMLImageElement;
+        slot.appendChild(clone);
+
+        slot.onclick = (e) => {
+          e.stopPropagation();
+          removeFromSlot(i);
+        };
       }
     });
+  }
+
+  function triggerReturnFlight(slotIndex: number, imageIndex: number) {
+    // 위치 계산 (애니메이션용)
+    const slotEl = slotEls[slotIndex];
+    const cellEl = gridEl.querySelector(
+      `.tc-cell[data-index="${imageIndex}"]`,
+    ) as HTMLElement;
+    const currentImg = slotEl.querySelector("img");
+
+    if (!cellEl || !currentImg) return;
+
+    const startRect = slotEl.getBoundingClientRect();
+    const endRect = cellEl.getBoundingClientRect();
+
+    // 날아가는 이미지 생성
+    const flightEl = document.createElement("img");
+    flightEl.src = currentImg.src;
+    flightEl.className = "tc-return-flight";
+
+    Object.assign(flightEl.style, {
+      width: `${startRect.width}px`,
+      height: `${startRect.height}px`,
+      left: `${startRect.left}px`,
+      top: `${startRect.top}px`,
+      opacity: "1",
+      transform: "scale(1)",
+    });
+
+    phaseRoot.appendChild(flightEl);
+
+    // 애니메이션 실행
+    requestAnimationFrame(() => {
+      // 첫 번째 프레임: 요소가 DOM에 추가되고 시작 위치가 확정됨
+      requestAnimationFrame(() => {
+        // 두 번째 프레임: 이제 변경된 스타일을 적용하면 transition이 트리거됨
+        Object.assign(flightEl.style, {
+          left: `${endRect.left}px`,
+          top: `${endRect.top}px`,
+          width: `${endRect.width}px`,
+          height: `${endRect.height}px`,
+          opacity: "0.3",
+          transform: "scale(0.8)",
+        });
+      });
+    });
+
+    // 완료 후 정리
+    setTimeout(() => {
+      flightEl.remove();
+    }, THEME.duration.returnFlight); // CSS transition 시간과 동일하게 설정
+  }
+
+  function removeFromSlot(slotIndex: number) {
+    const imageIndex = slots[slotIndex];
+    if (imageIndex === null) return;
+
+    triggerReturnFlight(slotIndex, imageIndex);
+
+    // 상태 업데이트 및 UI 즉시 반영
+    slots[slotIndex] = null;
+    renderSlots();
+
+    setTimeout(() => {
+      const cellEl = gridEl.querySelector(
+        `.tc-cell[data-index="${imageIndex}"]`,
+      );
+      cellEl?.classList.remove("is-used");
+    }, THEME.duration.returnFlight);
   }
 
   function cleanupPointer() {

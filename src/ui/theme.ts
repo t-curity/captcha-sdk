@@ -23,5 +23,6 @@ export const THEME = {
     failDraw: 1000,
     shake: 300,
     abortGrace: 500,
+    returnFlight: 300,
   },
 } as const;
