@@ -102,7 +102,7 @@ export function usePhaseAInput({
           result.current,
           img.getBoundingClientRect(),
           guide_line,
-        ) >= 0.8;
+        ) >= (guide_line.min_progress_threshold ?? 0.8);
 
       drawStroke(
         ctx,
