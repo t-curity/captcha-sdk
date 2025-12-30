@@ -93,7 +93,7 @@ export function usePhaseAInput({
 
     if (result) {
       const isAlwaysInside =
-        !isCancelled &&
+        //!isCancelled &&
         result.current.every((p) => p.event_type !== "move_out");
 
       const passed =
