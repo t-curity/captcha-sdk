@@ -6,6 +6,8 @@ import { useAbortObservers } from "./useAbortKey";
 import { hideOverlay, showOverlay, onOverlayDismiss } from "../overlay";
 import { Problem } from "@/types/contracts/problems";
 
+const CRITICAL_THRESHOLD = 0.8;
+
 export interface phaseBaseShell {
   root: HTMLElement;
   body: HTMLElement;
@@ -68,7 +70,14 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
     if (!startTime || !setPhasePercents) return;
 
     const elapsed = Date.now() - startTime;
+    const progressRatio = elapsed / duration;
     const progress = Math.min((elapsed / duration) * 100, 100);
+
+    if (progressRatio >= CRITICAL_THRESHOLD) {
+      root.classList.add("is-critical");
+    } else {
+      root.classList.remove("is-critical");
+    }
 
     const percents = Array.from({ length: totalSteps }).map((_, i) => {
       const stepNum = i + 1;
@@ -82,6 +91,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
     if (progress < 100) {
       timerId = requestAnimationFrame(updateProgress);
     } else {
+      root.classList.remove("is-critical");
       onAbort("TIMEOUT");
     }
   };
@@ -165,6 +175,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
     },
     resetTimer: () => {
       startTime = Date.now();
+      root.classList.remove("is-critical");
 
       if (!timerId) {
         timerId = requestAnimationFrame(updateProgress);
