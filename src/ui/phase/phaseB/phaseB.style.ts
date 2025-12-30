@@ -15,7 +15,6 @@ export const phaseBCss = `
 
   /* opacity */
   --opacity-used: 0.3;
-  --opacity-placeholder: 0.2;
 
   /* duration */
   --dur-fast: 0.15s;
@@ -66,10 +65,38 @@ export const phaseBCss = `
 
 /* Grid */
 .tc-grid {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.tc-grid::after {
+  content: ""; 
+  position: absolute;
+  /* 부모인 .tc-grid의 전체 면적을 꽉 채움 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  
+  /* 내부 Cell들보다 위에 올라오도록 z-index 부여 */
+  z-index: 99; 
+  pointer-events: none; /* 마우스 이벤트를 방해하지 않음 */
+  
+  box-shadow: inset 0 0 40px 5px rgba(82, 196, 26, 0.25);
+  background-color: rgba(82, 196, 26, 0.05);
+  
+  /* 애니메이션 효과 */
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3. JS에서 .is-drag-over 클래스가 붙었을 때 ::after를 보여줌 */
+.tc-grid.is-drag-over::after {
+  opacity: 1;
 }
 
 .tc-cell {
@@ -128,8 +155,9 @@ export const phaseBCss = `
  * State (의미 기반 – 애니메이션 없음)
  * ======================================================= */
 .tc-cell.is-dragging {
-  outline: 2px solid var(--tc-primary);
-  opacity: 0.85;
+  outline: 3px solid var(--tc-primary);
+  outline-offset: -3px;
+  opacity: 0.8;
 }
 
 .tc-cell.is-used {
@@ -147,9 +175,10 @@ export const phaseBCss = `
   background: #f0fff4;
 }
 
-.tc-phase-b-slot.is-placeholder {
-  opacity: var(--opacity-placeholder);
-  filter: grayscale(1);
+.tc-phase-b-slot.is-dragging {
+  outline: 3px solid var(--tc-primary);
+  outline-offset: -3px;
+  opacity: 0.8;
 }
 
 /* =========================================================
@@ -224,7 +253,7 @@ export const phaseBCss = `
   /* 등장 애니메이션 */
   opacity: 0;
   transform: scale(0.5);
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity var(--dur-fast), transform var(--dur-fast);
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
@@ -238,10 +267,5 @@ export const phaseBCss = `
 .tc-phase-b-slot.has-image:hover .tc-remove-badge:hover {
   opacity: 1;
   transform: scale(1.1) !important;
-}
-
-/* 드래그 중인 슬롯(잔상)에서는 삭제 버튼을 숨김 */
-.tc-phase-b-slot.is-placeholder .tc-remove-badge {
-  display: none;
 }
 `;
