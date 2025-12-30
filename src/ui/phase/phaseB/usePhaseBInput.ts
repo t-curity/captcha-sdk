@@ -3,7 +3,7 @@ import type { RawPointerEvent } from "@/ui/input/raw";
 import { StrokeManager } from "@/utils/StrokeManager";
 import { getEventCoords } from "@/utils/coords";
 import { PhaseBGhostManager } from "./phaseBGhostManager";
-import { PhaseBSlotManager } from "./PhaseBSlotManager";
+import { PhaseBSlotManager } from "./phaseBSlotManager";
 import { sleep } from "@/utils/sleep";
 
 type PhaseBInputParams = {
