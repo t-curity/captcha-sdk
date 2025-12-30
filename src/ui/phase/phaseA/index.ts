@@ -12,7 +12,7 @@ export function renderPhaseA(
   { guide_line, guide_text, image, phase, time_limit }: PhaseAProblem,
   shell: phaseBaseShell,
   PhaseAOptions: { debugGuideLine?: boolean } = {},
-): Promise<PhaseAResult> {
+): Promise<{ result: PhaseAResult; asyncAnim: () => Promise<void> }> {
   return new Promise((resolve) => {
     // Dom
     const { container, slot } = createPhaseADOM(guide_text);
@@ -32,6 +32,44 @@ export function renderPhaseA(
       getImageLocalRect,
       cleanup: cleanupCanvas,
     } = setupImageCanvas(slot, image);
+
+    const playSplitAnimation = async () => {
+      const splitPos = guide_line.start[0];
+      const splitPercent = `${guide_line.start[0] * 100}%`;
+
+      const leftSpeed = 100 * (1 + (1 - splitPos));
+      const rightSpeed = 100 * (1 + splitPos);
+
+      const leftAngle = 15 * (1 + (1 - splitPos));
+      const rightAngle = 15 * (1 + splitPos);
+
+      slot.style.setProperty("--split-pos", splitPercent);
+      slot.style.setProperty("--left-speed", leftSpeed.toString());
+      slot.style.setProperty("--right-speed", rightSpeed.toString());
+      slot.style.setProperty("--left-angle", leftAngle.toString());
+      slot.style.setProperty("--right-angle", rightAngle.toString());
+
+      const leftHalf = img.cloneNode() as HTMLImageElement;
+      const rightHalf = img.cloneNode() as HTMLImageElement;
+      leftHalf.classList.add("tc-split-half", "tc-split-left");
+      leftHalf.classList.remove("tc-main-img");
+      rightHalf.classList.add("tc-split-half", "tc-split-right");
+      rightHalf.classList.remove("tc-main-img");
+      slot.appendChild(leftHalf);
+      slot.appendChild(rightHalf);
+
+      img.style.visibility = "hidden";
+      canvas.style.opacity = "0";
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          slot.classList.add("is-splitting");
+        });
+      });
+
+      // 애니메이션 시간 (phaseA.style.ts의 transition 시간과 맞춤)
+      await new Promise((r) => setTimeout(r, 600));
+    };
 
     const onTimeout = () => finish({ cancelled: true, reason: "TIMEOUT" });
 
@@ -86,7 +124,8 @@ export function renderPhaseA(
       shell.root.removeEventListener("phase:timeout", onTimeout);
 
       console.log("finish", result);
-      resolve(result);
+
+      resolve({ result, asyncAnim: playSplitAnimation });
     }
   });
 }

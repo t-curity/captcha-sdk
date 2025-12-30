@@ -85,9 +85,6 @@ export class CaptchaProcess {
         switch (current.status) {
           case "PHASE_A":
             current = await this.handlePhaseA(session_id, current);
-            if (current.success && current.status === "PHASE_A") {
-              this.toast?.showToast("다시 시도해주세요.");
-            }
             // current = {
             //   data: {
             //     problem: createMockPhaseBProblem(),
@@ -99,9 +96,6 @@ export class CaptchaProcess {
           case "PHASE_B":
             // current.data.problem = createMockPhaseBProblem();
             current = await this.handlePhaseB(session_id, current);
-            if (current.success && current.status === "PHASE_B") {
-              this.toast?.showToast("다시 시도해주세요.");
-            }
             break;
           case "COMPLETED": {
             return session_id;
@@ -129,7 +123,7 @@ export class CaptchaProcess {
     shell.setup(problem);
     shell.startTimer();
 
-    let result = await renderPhaseA(problem, shell, {
+    let { result, asyncAnim } = await renderPhaseA(problem, shell, {
       debugGuideLine: true,
     });
 
@@ -154,10 +148,23 @@ export class CaptchaProcess {
 
     console.log("PHASE_A", payload);
 
-    return await shell.withLoading(
+    const responce = await shell.withLoading(
       () => client.submit(session_id, payload),
       400,
     );
+
+    if (responce.success) {
+      switch (responce.status) {
+        case "PHASE_A":
+          this.toast?.showToast("다시 시도해주세요.");
+          break;
+        case "PHASE_B":
+          await asyncAnim();
+          break;
+      }
+    }
+
+    return responce;
   }
 
   private async handlePhaseB(
@@ -198,9 +205,22 @@ export class CaptchaProcess {
     const payload = mapPhaseBToPayload(problem.grid, result);
     console.log("PHASE_B", payload);
 
-    return await shell.withLoading(
+    const responce = await shell.withLoading(
       () => client.submit(session_id, payload),
       400,
     );
+
+    if (responce.success) {
+      switch (responce.status) {
+        case "PHASE_B":
+          this.toast?.showToast("다시 시도해주세요.");
+          break;
+        case "COMPLETED":
+          // 완료 애니메이션 추가 예정
+          break;
+      }
+    }
+
+    return responce;
   }
 }
