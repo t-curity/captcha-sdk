@@ -54,6 +54,26 @@ export const phaseBCss = `
   background: #fff;
   border-radius: 8px;
   user-select: none;
+
+  /* 초기 상태: 투명하고 살짝 작음 */
+  opacity: 0;
+  transform: scale(0.95);
+  
+  /* 0.6초 동안 서서히 나타남 (A의 쪼개지는 시간과 맞춤) */
+  animation: tc-phase-appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tc-phase-appear {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+    filter: blur(4px); /* 살짝 흐릿하게 시작하면 더 몽환적입니다 */
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
 }
 
 .tc-question {

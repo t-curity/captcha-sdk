@@ -23,7 +23,7 @@ export const phaseACss = `
 
 /* 쪼개지는 파편 공통 스타일 */
 .tc-split-half {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -31,7 +31,7 @@ export const phaseACss = `
   pointer-events: none;
   /* 부드럽게 튕겨나가는 효과를 위한 커스텀 베지어 */
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease;
-  z-index: 10;
+  z-index: 10000;
   
   transform-origin: var(--split-pos) 50%;
 }

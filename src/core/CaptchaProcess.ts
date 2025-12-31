@@ -85,16 +85,8 @@ export class CaptchaProcess {
         switch (current.status) {
           case "PHASE_A":
             current = await this.handlePhaseA(session_id, current);
-            // current = {
-            //   data: {
-            //     problem: createMockPhaseBProblem(),
-            //   },
-            //   status: "PHASE_B",
-            //   success: true,
-            // };
             break;
           case "PHASE_B":
-            // current.data.problem = createMockPhaseBProblem();
             current = await this.handlePhaseB(session_id, current);
             break;
           case "COMPLETED": {
@@ -159,7 +151,7 @@ export class CaptchaProcess {
           this.toast?.showToast("다시 시도해주세요.");
           break;
         case "PHASE_B":
-          await asyncAnim();
+          asyncAnim();
           break;
       }
     }

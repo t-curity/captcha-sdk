@@ -7,6 +7,7 @@ import { renderGuideLine } from "./renderGuideLine";
 import { usePhaseAInput } from "./usePhaseAInput";
 import { phaseBaseShell } from "@/ui/shell";
 import { getOrCreateToast } from "@/ui/toast";
+import { getOverlayStage } from "@/ui/overlay/overlay.dom";
 
 export function renderPhaseA(
   { guide_line, guide_text, image, phase, time_limit }: PhaseAProblem,
@@ -34,41 +35,53 @@ export function renderPhaseA(
     } = setupImageCanvas(slot, image);
 
     const playSplitAnimation = async () => {
-      const splitPos = guide_line.start[0];
-      const splitPercent = `${guide_line.start[0] * 100}%`;
-
-      const leftSpeed = 100 * (1 + (1 - splitPos));
-      const rightSpeed = 100 * (1 + splitPos);
-
-      const leftAngle = 15 * (1 + (1 - splitPos));
-      const rightAngle = 15 * (1 + splitPos);
-
-      slot.style.setProperty("--split-pos", splitPercent);
-      slot.style.setProperty("--left-speed", leftSpeed.toString());
-      slot.style.setProperty("--right-speed", rightSpeed.toString());
-      slot.style.setProperty("--left-angle", leftAngle.toString());
-      slot.style.setProperty("--right-angle", rightAngle.toString());
+      const rect = img.getBoundingClientRect();
+      const stage = getOverlayStage();
 
       const leftHalf = img.cloneNode() as HTMLImageElement;
       const rightHalf = img.cloneNode() as HTMLImageElement;
-      leftHalf.classList.add("tc-split-half", "tc-split-left");
-      leftHalf.classList.remove("tc-main-img");
-      rightHalf.classList.add("tc-split-half", "tc-split-right");
-      rightHalf.classList.remove("tc-main-img");
-      slot.appendChild(leftHalf);
-      slot.appendChild(rightHalf);
+
+      const setupShard = (shard: HTMLImageElement, isLeft: boolean) => {
+        shard.className = `tc-split-half ${isLeft ? "tc-split-left" : "tc-split-right"}`;
+        shard.classList.remove("tc-main-img");
+
+        shard.style.left = `${rect.left}px`;
+        shard.style.top = `${rect.top}px`;
+        shard.style.width = `${rect.width}px`;
+        shard.style.height = `${rect.height}px`;
+        shard.style.margin = "0";
+
+        stage.appendChild(shard);
+      };
+
+      setupShard(leftHalf, true);
+      setupShard(rightHalf, false);
+
+      const splitPos = guide_line.start[0];
+      const splitPercent = `${guide_line.start[0] * 100}%`;
+      const leftSpeed = 100 * (1 + (1 - splitPos));
+      const rightSpeed = 100 * (1 + splitPos);
+      const leftAngle = 15 * (1 + (1 - splitPos));
+      const rightAngle = 15 * (1 + splitPos);
+
+      stage.style.setProperty("--split-pos", splitPercent);
+      stage.style.setProperty("--left-speed", leftSpeed.toString());
+      stage.style.setProperty("--right-speed", rightSpeed.toString());
+      stage.style.setProperty("--left-angle", leftAngle.toString());
+      stage.style.setProperty("--right-angle", rightAngle.toString());
 
       img.style.visibility = "hidden";
       canvas.style.opacity = "0";
 
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          slot.classList.add("is-splitting");
-        });
+        stage.classList.add("is-splitting");
       });
 
-      // 애니메이션 시간 (phaseA.style.ts의 transition 시간과 맞춤)
-      await new Promise((r) => setTimeout(r, 600));
+      await setTimeout(() => {
+        leftHalf.remove();
+        rightHalf.remove();
+        stage.classList.remove("is-splitting");
+      }, 600);
     };
 
     const onTimeout = () => finish({ cancelled: true, reason: "TIMEOUT" });
