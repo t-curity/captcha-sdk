@@ -22,7 +22,7 @@ export const phaseBCss = `
   --dur-base: 0.3s;
 
   /* easing */
-  --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-elastic: cubic-bezier(0.15, 0.85, 0.35, 1);
 }
 
 /* =========================================================

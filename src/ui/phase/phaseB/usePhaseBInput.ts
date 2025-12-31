@@ -10,7 +10,7 @@ type PhaseBInputParams = {
   gridEl: HTMLDivElement;
   slotEls: HTMLElement[];
   max_answer: number;
-  duration: number;
+  duration?: number;
   onPass: (data: { selected: number[]; raw_points: RawPointerEvent[] }) => void;
 };
 
