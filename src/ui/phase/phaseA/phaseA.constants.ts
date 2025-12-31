@@ -1,1 +1,1 @@
-export const MIN_PROGRESS_THRESHOLD = 0.2;
+export const MIN_PROGRESS_THRESHOLD = 0.8;
