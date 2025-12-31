@@ -43,13 +43,14 @@ export function renderPhaseA(
 
       const setupShard = (shard: HTMLImageElement, isLeft: boolean) => {
         shard.className = `tc-split-half ${isLeft ? "tc-split-left" : "tc-split-right"}`;
-        shard.classList.remove("tc-main-img");
 
-        shard.style.left = `${rect.left}px`;
-        shard.style.top = `${rect.top}px`;
-        shard.style.width = `${rect.width}px`;
-        shard.style.height = `${rect.height}px`;
-        shard.style.margin = "0";
+        Object.assign(shard.style, {
+          left: `${rect.left}px`,
+          top: `${rect.top}px`,
+          width: `${rect.width}px`,
+          height: `${rect.height}px`,
+          margin: "0",
+        });
 
         stage.appendChild(shard);
       };
@@ -59,6 +60,7 @@ export function renderPhaseA(
 
       const splitPos = guide_line.start[0];
       const splitPercent = `${guide_line.start[0] * 100}%`;
+
       const leftSpeed = 100 * (1 + (1 - splitPos));
       const rightSpeed = 100 * (1 + splitPos);
       const leftAngle = 15 * (1 + (1 - splitPos));
@@ -73,15 +75,22 @@ export function renderPhaseA(
       img.style.visibility = "hidden";
       canvas.style.opacity = "0";
 
+      // 강제 리플로우
+      void leftHalf.offsetHeight;
+      void rightHalf.offsetHeight;
+
+      // Double rAF
       requestAnimationFrame(() => {
-        stage.classList.add("is-splitting");
+        requestAnimationFrame(() => {
+          stage.classList.add("is-splitting");
+        });
       });
 
-      await setTimeout(() => {
+      setTimeout(() => {
         leftHalf.remove();
         rightHalf.remove();
         stage.classList.remove("is-splitting");
-      }, 600);
+      }, 700);
     };
 
     const onTimeout = () => finish({ cancelled: true, reason: "TIMEOUT" });

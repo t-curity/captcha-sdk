@@ -142,7 +142,7 @@ export class CaptchaProcess {
 
     const responce = await shell.withLoading(
       () => client.submit(session_id, payload),
-      400,
+      0,
     );
 
     if (responce.success) {
@@ -199,7 +199,7 @@ export class CaptchaProcess {
 
     const responce = await shell.withLoading(
       () => client.submit(session_id, payload),
-      400,
+      0,
     );
 
     if (responce.success) {
