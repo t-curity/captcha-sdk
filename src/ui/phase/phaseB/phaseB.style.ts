@@ -219,7 +219,7 @@ export const phaseBCss = `
 
 /* Return / Swap Flight */
 .tc-return-flight {
-  position: fixed;
+  position: absolute;
   pointer-events: none;
   z-index: 10000;
 

@@ -45,14 +45,15 @@ export class PhaseBGhostManager {
     ) as HTMLImageElement;
     if (!originalImg) return;
 
+    const rootRect = this.phaseRoot.getBoundingClientRect();
     const flightEl = document.createElement("img");
     flightEl.src = originalImg.src;
     flightEl.className = "tc-return-flight";
     Object.assign(flightEl.style, {
       width: `${startRect.width}px`,
       height: `${startRect.height}px`,
-      left: `${startRect.left}px`,
-      top: `${startRect.top}px`,
+      left: `${startRect.left - rootRect.left}px`,
+      top: `${startRect.top - rootRect.top}px`,
       opacity: "1",
       transform: "scale(1)",
     });
@@ -62,8 +63,8 @@ export class PhaseBGhostManager {
 
     requestAnimationFrame(() => {
       Object.assign(flightEl.style, {
-        left: `${endRect.left}px`,
-        top: `${endRect.top}px`,
+        left: `${endRect.left - rootRect.left}px`,
+        top: `${endRect.top - rootRect.top}px`,
         width: `${endRect.width}px`,
         height: `${endRect.height}px`,
         opacity: isToGrid ? "0.3" : "1",
