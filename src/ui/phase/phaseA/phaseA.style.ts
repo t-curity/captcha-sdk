@@ -34,6 +34,7 @@ export const phaseACss = `
   will-change: transform, opacity, clip-path;
 
   /* 부드럽게 튕겨나가는 효과를 위한 커스텀 베지어 */
+  filter: blur(0px);
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease;
   z-index: 10000;
   
@@ -52,6 +53,7 @@ export const phaseACss = `
 
 /* 애니메이션 실행 시점 (is-splitting 클래스가 붙었을 때) */
 .is-splitting .tc-split-left {
+  filter: blur(4px);
   transform: translateX(calc(var(--left-speed) * -1px)) 
              translateY(-20px) 
              rotate(calc(var(--left-angle) * -1deg));

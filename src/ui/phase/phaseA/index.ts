@@ -61,10 +61,10 @@ export function renderPhaseA(
       const splitPos = guide_line.start[0];
       const splitPercent = `${guide_line.start[0] * 100}%`;
 
-      const leftSpeed = 100 * (1 + (1 - splitPos));
-      const rightSpeed = 100 * (1 + splitPos);
-      const leftAngle = 15 * (1 + (1 - splitPos));
-      const rightAngle = 15 * (1 + splitPos);
+      const leftSpeed = 60 * (1 + (1 - splitPos));
+      const rightSpeed = 60 * (1 + splitPos);
+      const leftAngle = 8 * (1 + (1 - splitPos));
+      const rightAngle = 8 * (1 + splitPos);
 
       stage.style.setProperty("--split-pos", splitPercent);
       stage.style.setProperty("--left-speed", leftSpeed.toString());
