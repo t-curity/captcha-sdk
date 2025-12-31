@@ -5,8 +5,7 @@ import { phaseBaseCss } from "./phase-base.style";
 import { useAbortObservers } from "./useAbortKey";
 import { hideOverlay, showOverlay, onOverlayDismiss } from "../overlay";
 import { Problem } from "@/types/contracts/problems";
-
-const CRITICAL_THRESHOLD = 0.8;
+import { CRITICAL_THRESHOLD } from "./phase-base.constants";
 
 export interface phaseBaseShell {
   root: HTMLElement;

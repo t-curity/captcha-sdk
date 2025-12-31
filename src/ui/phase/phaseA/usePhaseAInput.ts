@@ -1,7 +1,7 @@
 import { GuideLine } from "@/types/contracts/problems";
 import { THEME } from "@/ui/theme";
 import { RawPointerEvent } from "@/ui/input/raw";
-import { getEventCoords, toImageCoords } from "@/utils/coords";
+import { getEventCoords } from "@/utils/coords";
 import { drawStroke } from "@/ui/canvas/drawStroke";
 import { STROKE_PRESET } from "@/ui/canvas/strokePresets";
 import { StrokeManager } from "../../../utils/StrokeManager";
@@ -9,6 +9,7 @@ import {
   calculateProgress,
   isPointInsideGuideLine,
 } from "@/utils/guideLineMath";
+import { MIN_PROGRESS_THRESHOLD } from "./phaseA.constants";
 
 type PhaseAInputParams = {
   slot: HTMLElement;
@@ -102,7 +103,7 @@ export function usePhaseAInput({
           result.current,
           img.getBoundingClientRect(),
           guide_line,
-        ) >= (guide_line.min_progress_threshold ?? 0.8);
+        ) >= (guide_line.min_progress_threshold ?? MIN_PROGRESS_THRESHOLD);
 
       drawStroke(
         ctx,
