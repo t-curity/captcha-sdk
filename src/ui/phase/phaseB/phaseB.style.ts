@@ -8,6 +8,7 @@ export const phaseBCss = `
   --tc-danger: #ff4d4f;       /* 삭제/주의 (Red) */
   --tc-bg-neutral: #f2f2f2;   /* 기본 배경 (Gray) */
   --tc-slot-bg: #cecece;      /* 슬롯 기본 배경 */
+  --tc-slot-drag: #a0a0a0;  /* 슬롯 드래그 중 배경 */
 
   /* size */
   --slot-size: 90px;
@@ -191,14 +192,30 @@ export const phaseBCss = `
 }
 
 .tc-phase-b-slot.is-hover {
-  border-color: var(--tc-primary);
-  background: #f0fff4;
+  outline: 3px solid var(--tc-primary);
+  outline-offset: -3px;
 }
 
 .tc-phase-b-slot.is-dragging {
+  outline: 3px dashed var(--tc-slot-drag);
+  outline-offset: -3px;
+}
+  
+.tc-phase-b-slot.is-hover.is-dragging {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
-  opacity: 0.8;
+}
+  
+.tc-phase-b-slot.is-hover img {
+  opacity: 0.2;
+}
+
+.tc-phase-b-slot.is-dragging img {
+  opacity: 0.6;
+}
+
+.tc-phase-b-slot.is-hover.is-dragging img {
+  opacity: 0.2;
 }
 
 /* =========================================================
@@ -244,6 +261,12 @@ export const phaseBCss = `
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.tc-drag-ghost.is-snapped {
+  transition: left 0.02s cubic-bezier(0.2, 0, 0.2, 1), 
+              top 0.02s cubic-bezier(0.2, 0, 0.2, 1),
+              transform 0.02s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 .tc-drag-ghost img {

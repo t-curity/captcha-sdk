@@ -24,6 +24,14 @@ export class PhaseBGhostManager {
     this.ghostEl.style.top = `${e.clientY - rootRect.top - 36}px`;
   }
 
+  moveTo(rect: DOMRect) {
+    if (!this.ghostEl || !rect) return;
+    const rootRect = this.phaseRoot.getBoundingClientRect();
+
+    this.ghostEl.style.left = `${rect.left - rootRect.left + rect.width / 2 - 36}px`;
+    this.ghostEl.style.top = `${rect.top - rootRect.top + rect.height / 2 - 36}px`;
+  }
+
   remove() {
     this.ghostEl?.remove();
     this.ghostEl = null;
@@ -31,6 +39,14 @@ export class PhaseBGhostManager {
 
   getRect() {
     return this.ghostEl?.getBoundingClientRect();
+  }
+
+  addClass(className: string) {
+    this.ghostEl?.classList.add(className);
+  }
+
+  removeClass(className: string) {
+    this.ghostEl?.classList.remove(className);
   }
 
   async triggerFlight(

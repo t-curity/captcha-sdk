@@ -111,7 +111,16 @@ export function usePhaseBInput({
       ghost.move(e);
 
       const slot = findSlotByPoint(e.clientX, e.clientY);
+
       slotEls.forEach((s) => s.classList.toggle("is-hover", s === slot));
+
+      if (slot) {
+        ghost.addClass("is-snapped");
+        ghost.moveTo(slot.getBoundingClientRect());
+      } else {
+        ghost.removeClass("is-snapped");
+      }
+
       gridEl.classList.toggle(
         "is-drag-over",
         isOverGrid(e.clientX, e.clientY) && sourceSlotIndex !== null,
@@ -257,9 +266,13 @@ export function usePhaseBInput({
     renderSlots();
   }
 
+  const slotRects: [HTMLElement, DOMRect][] = slotEls.map((slot) => [
+    slot,
+    slot.getBoundingClientRect(),
+  ]);
+
   function findSlotByPoint(x: number, y: number): HTMLDivElement | null {
-    for (const slot of slotEls) {
-      const rect = slot.getBoundingClientRect();
+    for (const [slot, rect] of slotRects) {
       if (
         x >= rect.left &&
         x <= rect.right &&
@@ -269,6 +282,7 @@ export function usePhaseBInput({
         return slot as HTMLDivElement;
       }
     }
+
     return null;
   }
 
