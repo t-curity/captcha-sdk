@@ -1,6 +1,6 @@
 export const phaseBCss = `
 /* =========================================================
- * Phase B – Plus X Style
+ * Phase B Style
  * ======================================================= */
 .tc-phase-b {
   /* colors */
@@ -166,15 +166,13 @@ export const phaseBCss = `
 .tc-cell.is-dragging {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
-  opacity: 0.8;
-  transform: scale(0.95);
+  opacity: 0.5;
 }
 
 .tc-cell.is-used {
   opacity: var(--opacity-used);
   filter: grayscale(0.6);
   cursor: default;
-  transform: scale(0.95);
 }
 
 .tc-phase-b-slot.has-image {
@@ -257,14 +255,12 @@ export const phaseBCss = `
   opacity: 0.95;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
-  transform: rotate(-5deg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
 
 .tc-drag-ghost.is-snapped {
-  transition: left 0.02s ease, 
-              top 0.02s ease,
-              transform 0.02s ease;
+  transition: left 0.05s ease-out, 
+              top 0.05s ease-out;
 }
 
 .tc-drag-ghost img {
