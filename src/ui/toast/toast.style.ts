@@ -1,30 +1,30 @@
 export const toastCss = `
 .tc-toast {
   position: absolute;
-  bottom: 40px;            /* 바닥에서 살짝 띄움 */
-  left: 50%;               /* 가로 중앙 */
+  bottom: 24px;
+  left: 50%;
 
-  transform: translate(-50%, 20px); 
+  transform: translate(-50%, 10px); 
   opacity: 0;
   visibility: hidden;
 
-  background-color: rgba(33, 33, 33, 0.9); /* 차분한 검정 배경 */
-  color: #fff;             /* 흰색 글씨 */
-  padding: 10px 20px;      /* 넉넉한 여백 */
-  border-radius: 20px;     /* 알약 모양 */
+  background: #111827;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 12px;
   
-  font-size: 14px;         /* 너무 크지 않게 */
-  z-index: 100;            /* 다른 요소 위에 */
-  pointer-events: none;    /* 토스트 떠 있어도 뒤에 클릭 가능하게 (중요!) */
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   
-  /* 애니메이션 */
   transition: 
-    opacity 0.3s ease, 
-    transform 0.3s ease, 
-    visibility 0.3s;
+    opacity 0.2s ease, 
+    transform 0.2s ease, 
+    visibility 0.2s;
 }
 .tc-toast.show {
-  /* 살짝 위로 올라오는 효과 (기존 translateX(-50%)와 결합) */
   transform: translate(-50%, 0);
   opacity: 1;
   visibility: visible;

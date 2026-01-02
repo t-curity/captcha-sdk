@@ -6,6 +6,7 @@ export const overlayCss = `
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
 
   touch-action: none;
   user-select: none;
@@ -15,9 +16,9 @@ export const overlayCss = `
 .tc-overlay-capture {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 
   pointer-events: none;
 }

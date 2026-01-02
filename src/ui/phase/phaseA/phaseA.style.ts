@@ -1,12 +1,14 @@
 export const phaseACss = `
 .tc-phase-a {
   background: #fff;
-  padding: 16px;
-  border-radius: 8px;
+  padding: 0 0 16px;
 }
 
 .tc-phase-a-slot {
   position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
 
   touch-action: none;
   user-select: none;
@@ -14,7 +16,8 @@ export const phaseACss = `
 
 .tc-phase-a-slot img {
   display: block;
-  max-width: 480px;
+  max-width: 100%;
+  width: 100%;
 
   pointer-events: none;
   -webkit-user-drag: none;
@@ -30,44 +33,41 @@ export const phaseACss = `
   height: 100%;
   pointer-events: none;
 
-  /* GPU에게 이 요소들이 바뀔 것임을 미리 알림 */
   will-change: transform, opacity, clip-path;
 
-  /* 부드럽게 튕겨나가는 효과를 위한 커스텀 베지어 */
   filter: blur(0px);
-  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
   z-index: 10000;
   
   transform-origin: var(--split-pos) 50%;
 }
 
-/* 왼쪽 파편: 오른쪽을 가림 */
+/* 왼쪽 파편 */
 .tc-split-left {
   clip-path: inset(0 calc(100% - var(--split-pos, 50%)) 0 0);
 }
 
-/* 오른쪽 파편: 왼쪽을 가림 */
+/* 오른쪽 파편 */
 .tc-split-right {
   clip-path: inset(0 0 0 var(--split-pos, 50%));
 }
 
-/* 애니메이션 실행 시점 (is-splitting 클래스가 붙었을 때) */
+/* 애니메이션 실행 */
 .is-splitting .tc-split-left {
-  filter: blur(4px);
   transform: translateX(calc(var(--left-speed) * -1px)) 
-             translateY(-20px) 
+             translateY(-15px) 
              rotate(calc(var(--left-angle) * -1deg));
   opacity: 0;
 }
 
 .is-splitting .tc-split-right {
   transform: translateX(calc(var(--right-speed) * 1px)) 
-             translateY(-20px) 
+             translateY(-15px) 
              rotate(calc(var(--right-angle) * 1deg));
   opacity: 0;
 }
 
-/* 애니메이션 도중 원본 이미지와 가이드는 숨김 */
+/* 애니메이션 도중 원본 숨김 */
 .is-splitting .tc-main-img,
 .is-splitting .tc-guide-band,
 .is-splitting .tc-guide-center {
@@ -79,15 +79,16 @@ export const phaseACss = `
 .tc-guide-band {
   position: absolute;
   box-sizing: border-box;
-  border: 1px dashed red;
+  border: 2px dashed #f43f5e;
   pointer-events: none;
-  transform-origin: 0 50%
+  transform-origin: 0 50%;
+  opacity: 0.8;
 }
   
 .tc-guide-center {
   position: absolute;
   box-sizing: border-box;
-  border-top: 1px solid green;
+  border-top: 2px solid #10b981;
   pointer-events: none;
   transform-origin: 0 50%;
 }
@@ -96,6 +97,9 @@ export const phaseACss = `
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 8px;
+  margin-top: 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
 }
 `;

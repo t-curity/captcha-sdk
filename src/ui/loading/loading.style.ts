@@ -11,18 +11,18 @@ export const loadingCss = `
 .tc-loading-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: blur(4px);
 }
 
 .tc-loading-spinner {
   position: relative;
-  width: 48px;
-  height: 48px;
-  border: 4px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top-color: #6366f1;
   border-radius: 50%;
-  animation: spin 0.9s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {

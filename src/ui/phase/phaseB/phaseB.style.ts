@@ -1,32 +1,33 @@
 export const phaseBCss = `
 /* =========================================================
- * Phase B – Design Tokens / Variables
+ * Phase B – Plus X Style
  * ======================================================= */
 .tc-phase-b {
   /* colors */
-  --tc-primary: #4caf50;      /* 활성/성공 (Green) */
-  --tc-danger: #ff4d4f;       /* 삭제/주의 (Red) */
-  --tc-bg-neutral: #f2f2f2;   /* 기본 배경 (Gray) */
-  --tc-slot-bg: #cecece;      /* 슬롯 기본 배경 */
-  --tc-slot-drag: #a0a0a0;  /* 슬롯 드래그 중 배경 */
+  --tc-primary: #6366f1;
+  --tc-primary-light: #818cf8;
+  --tc-danger: #f43f5e;
+  --tc-bg-neutral: #f3f4f6;
+  --tc-slot-bg: #e5e7eb;
+  --tc-slot-drag: #d1d5db;
 
   /* size */
-  --slot-size: 90px;
-  --ghost-size: 72px;
+  --slot-size: 80px;
+  --ghost-size: 80px;
 
   /* opacity */
   --opacity-used: 0.3;
 
   /* duration */
   --dur-fast: 0.15s;
-  --dur-base: 0.3s;
+  --dur-base: 0.2s;
 
   /* easing */
-  --ease-elastic: cubic-bezier(0.15, 0.85, 0.35, 1);
+  --ease-elastic: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* =========================================================
- * Input Control (공통 입력 차단)
+ * Input Control
  * ======================================================= */
 .tc-phase-b,
 .tc-grid,
@@ -53,35 +54,19 @@ export const phaseBCss = `
   display: flex;
   flex-direction: column;
   background: #fff;
-  border-radius: 8px;
   user-select: none;
-
-  /* 초기 상태: 투명하고 살짝 작음 */
-  opacity: 0;
-  transform: scale(0.95);
-  
-  /* 0.6초 동안 서서히 나타남 (A의 쪼개지는 시간과 맞춤) */
-  animation: tc-phase-appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-@keyframes tc-phase-appear {
-  0% {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-    filter: blur(4px); /* 살짝 흐릿하게 시작하면 더 몽환적입니다 */
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-    filter: blur(0);
-  }
 }
 
 .tc-question {
   text-align: center;
-  font-size: 14px;
-  margin: 8px;
-  font-weight: 500;
+  font-size: 16px;
+  margin: 0 0 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tc-question strong {
+  color: var(--tc-primary);
 }
 
 /* Grid */
@@ -90,32 +75,28 @@ export const phaseBCss = `
   overflow: hidden;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .tc-grid::after {
   content: ""; 
   position: absolute;
-  /* 부모인 .tc-grid의 전체 면적을 꽉 채움 */
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  
-  /* 내부 Cell들보다 위에 올라오도록 z-index 부여 */
   z-index: 99; 
-  pointer-events: none; /* 마우스 이벤트를 방해하지 않음 */
+  pointer-events: none;
   
-  box-shadow: inset 0 0 40px 5px rgba(82, 196, 26, 0.25);
-  background-color: rgba(82, 196, 26, 0.05);
+  box-shadow: inset 0 0 30px 5px rgba(99, 102, 241, 0.15);
+  background-color: rgba(99, 102, 241, 0.03);
+  border-radius: 16px;
   
-  /* 애니메이션 효과 */
   opacity: 0;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease;
 }
 
-/* 3. JS에서 .is-drag-over 클래스가 붙었을 때 ::after를 보여줌 */
 .tc-grid.is-drag-over::after {
   opacity: 1;
 }
@@ -123,10 +104,16 @@ export const phaseBCss = `
 .tc-cell {
   position: relative;
   aspect-ratio: 1 / 1;
-  border-radius: 6px;
+  border-radius: 16px;
   overflow: hidden;
   background: var(--tc-bg-neutral);
   cursor: grab;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+}
+
+.tc-cell:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
 .tc-cell:active {
@@ -143,10 +130,10 @@ export const phaseBCss = `
 .tc-phase-b-slots {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 8px;
-  background: #f0f0f0;
-  border-radius: 8px;
+  gap: 10px;
+  padding: 16px;
+  background: var(--tc-bg-neutral);
+  border-radius: 20px;
 }
 
 .tc-phase-b-slot {
@@ -154,37 +141,45 @@ export const phaseBCss = `
   width: var(--slot-size);
   height: var(--slot-size);
   aspect-ratio: 1 / 1;
-  border-radius: 8px;
-  background: #cecece;
-  border: 2px solid transparent;
+  border-radius: 14px;
+  background: var(--tc-slot-bg);
+  border: 2px dashed #d1d5db;
 
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: visible;
+  transition: all 0.2s ease;
 }
 
 .tc-phase-b-slot img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 12px;
   display: block;
 }
 
 /* =========================================================
- * State (의미 기반 – 애니메이션 없음)
+ * State
  * ======================================================= */
 .tc-cell.is-dragging {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
   opacity: 0.8;
+  transform: scale(0.95);
 }
 
 .tc-cell.is-used {
   opacity: var(--opacity-used);
-  filter: grayscale(0.8);
+  filter: grayscale(0.6);
   cursor: default;
+  transform: scale(0.95);
+}
+
+.tc-phase-b-slot.has-image {
+  border: none;
+  background: transparent;
 }
 
 .tc-phase-b-slot.has-image:hover {
@@ -194,11 +189,12 @@ export const phaseBCss = `
 .tc-phase-b-slot.is-hover {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
+  background: rgba(99, 102, 241, 0.1);
 }
 
 .tc-phase-b-slot.is-dragging {
-  outline: 3px dashed var(--tc-slot-drag);
-  outline-offset: -3px;
+  outline: 2px dashed var(--tc-slot-drag);
+  outline-offset: -2px;
 }
   
 .tc-phase-b-slot.is-hover.is-dragging {
@@ -207,7 +203,7 @@ export const phaseBCss = `
 }
   
 .tc-phase-b-slot.is-hover img {
-  opacity: 0.2;
+  opacity: 0.3;
 }
 
 .tc-phase-b-slot.is-dragging img {
@@ -215,13 +211,13 @@ export const phaseBCss = `
 }
 
 .tc-phase-b-slot.is-hover.is-dragging img {
-  opacity: 0.2;
+  opacity: 0.3;
 }
 
 /* =========================================================
  * Effects / Animations
  * ======================================================= */
-/* Shake (그리드 실패 피드백) */
+/* Shake */
 .tc-cell.shake {
   animation: shake var(--dur-base);
 }
@@ -239,6 +235,7 @@ export const phaseBCss = `
   position: absolute;
   pointer-events: none;
   z-index: 10000;
+  border-radius: 14px;
 
   transition:
     left   var(--dur-base) var(--ease-elastic),
@@ -257,16 +254,17 @@ export const phaseBCss = `
   pointer-events: none;
   z-index: 9999;
 
-  opacity: 0.9;
-  border-radius: 6px;
+  opacity: 0.95;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+  transform: rotate(-5deg);
 }
 
 .tc-drag-ghost.is-snapped {
-  transition: left 0.02s cubic-bezier(0.2, 0, 0.2, 1), 
-              top 0.02s cubic-bezier(0.2, 0, 0.2, 1),
-              transform 0.02s cubic-bezier(0.2, 0, 0.2, 1);
+  transition: left 0.02s ease, 
+              top 0.02s ease,
+              transform 0.02s ease;
 }
 
 .tc-drag-ghost img {
@@ -275,11 +273,11 @@ export const phaseBCss = `
   object-fit: cover;
 }
 
-/* 삭제 버튼 (배지) 기본 스타일 */
+/* 삭제 버튼 */
 .tc-remove-badge {
   position: absolute;
-  top: -10px;
-  right: -10px;
+  top: -6px;
+  right: -6px;
   width: 24px;
   height: 24px;
   background: var(--tc-danger);
@@ -288,27 +286,23 @@ export const phaseBCss = `
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   z-index: 100;
   
-  /* 등장 애니메이션 */
   opacity: 0;
   transform: scale(0.5);
   transition: opacity var(--dur-fast), transform var(--dur-fast);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.4);
 }
 
-/* 슬롯 호버 시 버튼 노출 */
 .tc-phase-b-slot.has-image:hover .tc-remove-badge {
-  opacity: 0.7;
+  opacity: 1;
   transform: scale(1);
 }
 
-/* 버튼에 마우스 올렸을 때 더 강조 */
 .tc-phase-b-slot.has-image:hover .tc-remove-badge:hover {
-  opacity: 1;
-  transform: scale(1.1) !important;
+  transform: scale(1.1);
 }
 `;

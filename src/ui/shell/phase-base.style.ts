@@ -1,15 +1,38 @@
 export const phaseBaseCss = `
 .tc-phase {
   background: #fff;
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 28px;
+  padding: 20px 24px;
   box-sizing: border-box;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+  max-width: 420px;
+  width: 100%;
 }
 
 .tc-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.tc-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tc-header-step {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.5px;
+}
+
+.tc-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
 }
   
 .tc-body {
@@ -24,47 +47,41 @@ export const phaseBaseCss = `
 
 .tc-phase-bar {
   flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: #e0e0e0;
+  height: 4px;
+  border-radius: 2px;
+  background: #f3f4f6;
   overflow: hidden;
 }
 
 .tc-phase-bar__fill {
   height: 100%;
   width: 0%;
-  background: #1976d2;
-  transition: width 100ms linear, background-color 0.3s ease;
-}
-
-.tc-shell-root.is-critical {
-  border-color: #ff4d4f;
-  box-shadow: 0 0 12px rgba(255, 77, 79, 0.3);
-  animation: tc-critical-pulse 1.5s infinite;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  border-radius: 2px;
+  transition: width 100ms linear;
 }
 
 .tc-shell-root.is-critical .tc-phase-bar__fill {
-  background: #ff4d4f;
-  animation: tc-bar-shake 0.2s infinite;
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
 }
 
 .tc-close {
-  background: transparent;
+  width: 36px;
+  height: 36px;
+  background: #f3f4f6;
   border: none;
-  font-size: 20px;
+  border-radius: 50%;
+  font-size: 18px;
   cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
 }
 
-/* 애니메이션 정의 */
-@keyframes tc-critical-pulse {
-  0% { box-shadow: 0 0 8px rgba(255, 77, 79, 0.2); }
-  50% { box-shadow: 0 0 16px rgba(255, 77, 79, 0.5); }
-  100% { box-shadow: 0 0 8px rgba(255, 77, 79, 0.2); }
-}
-
-@keyframes tc-bar-shake {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-1px); }
-  100% { transform: translateY(0); }
+.tc-close:hover {
+  background: #e5e7eb;
+  color: #374151;
 }
 `;
