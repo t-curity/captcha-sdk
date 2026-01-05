@@ -11,7 +11,7 @@ export const loadingCss = `
 .tc-loading-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.25);
   backdrop-filter: blur(4px);
 }
 
