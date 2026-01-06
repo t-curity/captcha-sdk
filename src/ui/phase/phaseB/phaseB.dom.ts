@@ -32,6 +32,7 @@ export function createPhaseBDOM(
     cell.dataset.index = String(idx);
 
     const img = document.createElement("img");
+    img.draggable = false;
     img.src = item.image.startsWith("data:")
       ? item.image
       : `data:image/jpeg;base64,${item.image}`;
@@ -49,6 +50,15 @@ export function createPhaseBDOM(
     const slot = document.createElement("div");
     slot.className = "tc-phase-b-slot";
     slot.dataset.slot = String(i);
+
+    const img = document.createElement("img");
+    slot.appendChild(img);
+
+    const removeBadge = document.createElement("div");
+    removeBadge.className = "tc-remove-badge";
+    removeBadge.innerHTML = "✕";
+    slot.appendChild(removeBadge);
+
     slotsEl.appendChild(slot);
     slotEls.push(slot);
   }

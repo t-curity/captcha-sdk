@@ -1,40 +1,59 @@
 import { sleep } from "@/utils/sleep";
 
+export type GhostRect = { width: number; height: number };
 export class PhaseBGhostManager {
   private ghostEl: HTMLDivElement | null = null;
+  private ghostRect: GhostRect | null = null;
 
-  constructor(
-    private phaseRoot: HTMLElement,
-    private gridEl: HTMLElement,
-  ) {}
+  constructor(private phaseRoot: HTMLElement) {}
 
-  create(cell: HTMLElement) {
+  create(rect: GhostRect) {
+    this.remove();
+
+    this.ghostRect = rect;
+
     this.ghostEl = document.createElement("div");
     this.ghostEl.className = "tc-drag-ghost";
-    const img = cell.querySelector("img")!.cloneNode(true) as HTMLImageElement;
-    this.ghostEl.appendChild(img);
+
+    Object.assign(this.ghostEl.style, {
+      width: `${this.ghostRect.width}px`,
+      height: `${this.ghostRect.height}px`,
+    });
+
     this.phaseRoot.appendChild(this.ghostEl);
   }
 
-  move(e: PointerEvent) {
+  hasGhost() {
+    return !!this.ghostEl;
+  }
+
+  setImage(img: HTMLImageElement) {
     if (!this.ghostEl) return;
+
+    this.ghostEl.querySelector("img")?.remove();
+    this.ghostEl.appendChild(img.cloneNode(true));
+  }
+
+  move(e: PointerEvent) {
+    if (!this.ghostEl || !this.ghostRect) return;
     const rootRect = this.phaseRoot.getBoundingClientRect();
 
-    this.ghostEl.style.left = `${e.clientX - rootRect.left - 36}px`;
-    this.ghostEl.style.top = `${e.clientY - rootRect.top - 36}px`;
+    this.ghostEl.style.left = `${e.clientX - rootRect.left - this.ghostRect.width / 2}px`;
+    this.ghostEl.style.top = `${e.clientY - rootRect.top - this.ghostRect.height / 2}px`;
   }
 
   moveTo(rect: DOMRect) {
-    if (!this.ghostEl || !rect) return;
+    if (!this.ghostEl || !rect || !this.ghostRect) return;
     const rootRect = this.phaseRoot.getBoundingClientRect();
 
-    this.ghostEl.style.left = `${rect.left - rootRect.left + rect.width / 2 - 36}px`;
-    this.ghostEl.style.top = `${rect.top - rootRect.top + rect.height / 2 - 36}px`;
+    this.ghostEl.style.left = `${rect.left - rootRect.left + rect.width / 2 - this.ghostRect.width / 2}px`;
+    this.ghostEl.style.top = `${rect.top - rootRect.top + rect.height / 2 - this.ghostRect.height / 2}px`;
   }
 
   remove() {
     this.ghostEl?.remove();
     this.ghostEl = null;
+    this.ghostRect = null;
   }
 
   getRect() {
@@ -52,13 +71,10 @@ export class PhaseBGhostManager {
   async triggerFlight(
     startRect: DOMRect,
     endRect: DOMRect,
-    imageIndex: number,
+    originalImg: HTMLImageElement,
     isToGrid: boolean,
     duration: number = 300,
   ) {
-    const originalImg = this.gridEl.querySelector(
-      `.tc-cell[data-index="${imageIndex}"] img`,
-    ) as HTMLImageElement;
     if (!originalImg) return;
 
     const rootRect = this.phaseRoot.getBoundingClientRect();

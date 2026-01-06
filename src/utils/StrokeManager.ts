@@ -61,9 +61,15 @@ export class StrokeManager {
   public getCurrentSegment() {
     return this.currentSegment ? [...this.currentSegment] : [];
   }
+
+  public getFirstPoint(): RawPointerEvent | null {
+    return this.currentSegment?.[0] ?? null;
+  }
+
   public getFlattenedPoints() {
     return this.segments.flat();
   }
+
   public clear() {
     this.segments = [];
     this.currentSegment = null;

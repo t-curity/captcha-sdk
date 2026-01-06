@@ -5,6 +5,7 @@ import { getEventCoords } from "@/utils/coords";
 import { PhaseBGhostManager } from "./phaseBGhostManager";
 import { PhaseBSlotManager } from "./phaseBSlotManager";
 import { sleep } from "@/utils/sleep";
+import { DRAG_THRESHOLD } from "./phaseB.constants";
 
 type PhaseBInputParams = {
   gridEl: HTMLDivElement;
@@ -21,193 +22,174 @@ export function usePhaseBInput({
   onPass,
   duration = 300,
 }: PhaseBInputParams) {
+  const controller = new AbortController();
+  const { signal } = controller;
+
   const phaseRoot = gridEl.closest(".tc-phase-root") as HTMLElement;
   const manager = new StrokeManager();
-  const ghost = new PhaseBGhostManager(phaseRoot, gridEl);
+  const ghost = new PhaseBGhostManager(phaseRoot);
   const slots = new PhaseBSlotManager(slotEls.length);
 
   let activePointerId: number | null = null;
+
   let activeImageIndex: number | null = null;
   let sourceSlotIndex: number | null = null;
-  let isDragTriggered = false;
-  let draggingCell: HTMLElement | null = null;
 
   if (!phaseRoot) {
     throw new Error("Phase root not found");
   }
 
   function onPointerDown(e: PointerEvent) {
-    const target = e.target as HTMLElement;
-    const cell = target.closest(".tc-cell") as HTMLElement;
-    const slotEl = target.closest(".tc-phase-b-slot") as HTMLElement;
-
     if (activePointerId !== null) return;
+    if (!(e.target instanceof HTMLElement)) return;
 
-    if (cell) {
-      // 그리드에서 잡기
-      const index = Number(cell.dataset.index);
-      if (slots.findSlotByImage(index) !== -1) return;
-      activeImageIndex = index;
-      draggingCell = cell;
-      draggingCell.classList.add("is-dragging");
-      sourceSlotIndex = null;
-    } else if (slotEl) {
-      // 슬롯에서 잡기
-      const sIdx = Number(slotEl.dataset.slot);
-      const slot = slots.get(sIdx);
+    const targetEl = e.target.closest(".tc-cell, .tc-phase-b-slot");
 
-      if (slot === null) return;
-      activeImageIndex = slot;
-      sourceSlotIndex = sIdx;
-      draggingCell = gridEl.querySelector(
-        `.tc-cell[data-index="${activeImageIndex}"]`,
-      ) as HTMLElement;
-      slotEls[sourceSlotIndex].classList.add("is-dragging");
-    } else {
-      return;
-    }
+    if (!(targetEl instanceof HTMLElement)) return;
 
     e.preventDefault();
 
-    activePointerId = e.pointerId;
-    isDragTriggered = false;
+    if (targetEl.classList.contains("tc-cell")) {
+      // 그리드에서 잡기
+      const imgIndex = Number(targetEl.dataset.index);
 
-    const { viewport_p, img_p } = getEventCoords(
-      e,
-      gridEl.getBoundingClientRect(),
-    );
-    manager.start(viewport_p, img_p);
-    phaseRoot.setPointerCapture(e.pointerId);
+      if (slots.findSlotByImage(imgIndex) !== -1) return;
+
+      activeImageIndex = imgIndex;
+      sourceSlotIndex = null;
+    } else {
+      // 슬롯에서 잡기
+      const slotIdx = Number(targetEl.dataset.slot);
+      const imgIndex = slots.get(slotIdx);
+
+      if (imgIndex === null) return;
+
+      activeImageIndex = imgIndex;
+      sourceSlotIndex = slotIdx;
+    }
+
+    ghost.remove();
+    phaseRoot.querySelectorAll(".is-picking").forEach((el) => {
+      el.classList.remove("is-picking");
+    });
+    targetEl.classList.add("is-picking");
+
+    beginPointerTracking(e);
   }
 
   function onPointerMove(e: PointerEvent) {
     if (e.pointerId !== activePointerId || !manager.isPressed) return;
+
     e.preventDefault();
 
-    const firstPoint = manager.getCurrentSegment()[0];
-    if (!firstPoint) return;
-
-    const dist = Math.sqrt(
-      Math.pow(e.clientX - firstPoint.viewport_p.x, 2) +
-        Math.pow(e.clientY - firstPoint.viewport_p.y, 2),
-    );
+    updatePointerTracking(e);
 
     // 5px 이상 이동 시 드래그 모드로 전환
-    if (!isDragTriggered && dist > 5) {
-      isDragTriggered = true;
-      if (draggingCell) ghost.create(draggingCell);
-      if (sourceSlotIndex !== null) {
-        slotEls[sourceSlotIndex].classList.add("is-dragging");
-      }
+    if (!ghost.hasGhost()) {
+      const firstPoint = manager.getFirstPoint();
+
+      if (!firstPoint) return;
+
+      const dist = Math.hypot(
+        e.clientX - firstPoint.viewport_p.x,
+        e.clientY - firstPoint.viewport_p.y,
+      );
+
+      if (dist <= DRAG_THRESHOLD || activeImageIndex === null) return;
+
+      ghost.create(slotEls[0].getBoundingClientRect());
+      const img = getCellImg(activeImageIndex);
+
+      if (!img) return;
+
+      ghost.setImage(img);
     }
 
-    if (isDragTriggered) {
-      const { viewport_p, img_p } = getEventCoords(
-        e,
-        gridEl.getBoundingClientRect(),
-      );
-      manager.move(viewport_p, img_p);
+    ghost.move(e);
 
-      ghost.move(e);
+    const slot = findSlotByPoint(e.clientX, e.clientY);
 
-      const slot = findSlotByPoint(e.clientX, e.clientY);
+    slotEls.forEach((s) => s.classList.toggle("is-snapping", s === slot));
 
-      slotEls.forEach((s) => s.classList.toggle("is-hover", s === slot));
+    // 자석 효과
+    if (slot) {
+      ghost.addClass("is-snapped");
+      ghost.moveTo(slot.getBoundingClientRect());
+    } else {
+      ghost.removeClass("is-snapped");
+    }
 
-      if (slot) {
-        ghost.addClass("is-snapped");
-        ghost.moveTo(slot.getBoundingClientRect());
-      } else {
-        ghost.removeClass("is-snapped");
+    gridEl.classList.toggle(
+      "is-drag-over",
+      isOverGrid(e.clientX, e.clientY) && sourceSlotIndex !== null,
+    );
+  }
+
+  async function handleEnd(e: PointerEvent, isCancelled: boolean) {
+    console.log("handleEnd called", e, isCancelled);
+    if (e.pointerId !== activePointerId) return;
+
+    try {
+      endPointerTracking(e, isCancelled);
+      clearDragUI();
+
+      if (isCancelled || activeImageIndex === null) return;
+
+      if (ghost.hasGhost()) {
+        const targetSlot = findSlotByPoint(e.clientX, e.clientY);
+
+        if (targetSlot) {
+          // to slot
+          const targetSlotIndex = Number(targetSlot.dataset.slot);
+
+          if (sourceSlotIndex !== null && sourceSlotIndex !== targetSlotIndex) {
+            // from slot: 슬롯 간 교체
+            await swapSlots(sourceSlotIndex, targetSlotIndex);
+          } else {
+            // from grid: 이미지 등록
+            await dropIntoSlot(targetSlotIndex, activeImageIndex);
+          }
+        } else if (
+          isOverGrid(e.clientX, e.clientY) &&
+          sourceSlotIndex !== null
+        ) {
+          // to grid from slot: 이미지 제거
+          await dropOutOfSlot(sourceSlotIndex);
+        } else {
+          const fallbackTarget =
+            sourceSlotIndex !== null
+              ? slotEls[sourceSlotIndex]
+              : getCell(activeImageIndex);
+          // to nowhere from anywhere: 이미지 복귀
+
+          if (fallbackTarget) {
+            await snapBack(
+              activeImageIndex,
+              fallbackTarget,
+              sourceSlotIndex !== null,
+            );
+          }
+        }
+      } else if (sourceSlotIndex !== null) {
+        // from slot: 이미지 제거 (클릭)
+        await dropOutOfSlot(sourceSlotIndex);
       }
-
-      gridEl.classList.toggle(
-        "is-drag-over",
-        isOverGrid(e.clientX, e.clientY) && sourceSlotIndex !== null,
-      );
+    } finally {
+      clearPickingUI();
     }
   }
 
-  function handleEnd(e: PointerEvent, isCancelled: boolean) {
-    if (e.pointerId !== activePointerId || !manager.isPressed) return;
-    if (isCancelled || activeImageIndex === null) return;
+  async function onClickRemoveBadge(e: PointerEvent) {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains("tc-remove-badge")) return;
 
-    if (!isDragTriggered && sourceSlotIndex !== null) {
-      removeFromSlot(sourceSlotIndex);
-    } else if (isDragTriggered) {
-      // 드래그 중
-      const targetSlot = findSlotByPoint(e.clientX, e.clientY);
-      const ghostRect = ghost.getRect();
+    e.stopPropagation();
+    e.preventDefault();
 
-      if (targetSlot) {
-        // to slot
-        const targetSlotIndex = Number(targetSlot.dataset.slot);
+    const slotEl = target.closest(".tc-phase-b-slot") as HTMLElement;
+    const slotIdx = Number(slotEl.dataset.slot);
 
-        if (sourceSlotIndex !== null && sourceSlotIndex !== targetSlotIndex) {
-          // from slot
-          swapSlots(sourceSlotIndex, targetSlotIndex);
-        } else {
-          // from grid
-          if (sourceSlotIndex !== null) slots.clear(sourceSlotIndex);
-          applyDropToSlot(targetSlot, activeImageIndex);
-        }
-      } else if (sourceSlotIndex !== null && ghostRect) {
-        // from slot
-        if (isOverGrid(e.clientX, e.clientY) && draggingCell) {
-          // to grid
-          slots.clear(sourceSlotIndex);
-          renderSlots(); // 슬롯 먼저 비움
-          ghost
-            .triggerFlight(
-              ghostRect,
-              draggingCell.getBoundingClientRect(),
-              activeImageIndex,
-              true,
-            )
-            .then(() => {
-              syncGridState();
-            });
-        } else {
-          // to nowhere
-          if (sourceSlotIndex !== null && ghostRect) {
-            const sourceSlot = slotEls[sourceSlotIndex];
-
-            ghost
-              .triggerFlight(
-                ghostRect,
-                sourceSlot.getBoundingClientRect(),
-                activeImageIndex,
-                false,
-              )
-              .then(() => {
-                syncGridState();
-              });
-          }
-        }
-      } else if (draggingCell && ghostRect) {
-        // from grid to nowhere
-        // performShake(draggingCell).then(() => {
-        //   draggingCell?.classList.remove("shake");
-        // });
-
-        const sourceSlot = draggingCell;
-
-        ghost
-          .triggerFlight(
-            ghostRect,
-            sourceSlot.getBoundingClientRect(),
-            activeImageIndex,
-            false,
-          )
-          .then(() => {
-            syncGridState();
-          });
-      }
-    }
-
-    // 모든 슬롯이 채워졌는지 확인
-    verifyCompletion();
-    cleanupPointer();
+    await dropOutOfSlot(slotIdx);
   }
 
   async function performShake(cell: HTMLElement) {
@@ -219,6 +201,7 @@ export function usePhaseBInput({
 
   function verifyCompletion() {
     const filledIndexes = slots.getFilled();
+
     if (filledIndexes.length === max_answer) {
       onPass({
         selected: filledIndexes,
@@ -227,52 +210,10 @@ export function usePhaseBInput({
     }
   }
 
-  function applyDropToSlot(slotEl: HTMLDivElement, imageIndex: number) {
-    const slotIndex = Number(slotEl.dataset.slot);
-    const prevImageIndex = slots.get(slotIndex);
-
-    // 1. 이미 같은 이미지가 들어가 있다면 무시
-    if (prevImageIndex === imageIndex) return;
-
-    // 2. [밀어내기 로직] 슬롯에 이미 이미지가 있는 경우
-    if (prevImageIndex !== null) {
-      const prevCell = gridEl.querySelector(
-        `.tc-cell[data-index="${prevImageIndex}"]`,
-      ) as HTMLElement;
-
-      if (prevCell) {
-        // 슬롯에 있던 이미지를 그리드의 원래 칸으로 날려보냄
-        ghost
-          .triggerFlight(
-            slotEl.getBoundingClientRect(), // 시작: 현재 슬롯
-            prevCell.getBoundingClientRect(), // 끝: 그리드 칸
-            prevImageIndex,
-            true,
-          )
-          .then(() => {
-            syncGridState();
-          });
-      }
-    }
-
-    // 3. 새로운 이미지를 슬롯에 안착
-    slots.set(slotIndex, imageIndex);
-
-    const newCell = gridEl.querySelector(
-      `.tc-cell[data-index="${imageIndex}"]`,
-    );
-    newCell?.classList.add("is-used");
-
-    renderSlots();
-  }
-
-  const slotRects: [HTMLElement, DOMRect][] = slotEls.map((slot) => [
-    slot,
-    slot.getBoundingClientRect(),
-  ]);
-
   function findSlotByPoint(x: number, y: number): HTMLDivElement | null {
-    for (const [slot, rect] of slotRects) {
+    for (const slot of slotEls) {
+      const rect = slot.getBoundingClientRect();
+
       if (
         x >= rect.left &&
         x <= rect.right &&
@@ -288,145 +229,270 @@ export function usePhaseBInput({
 
   function isOverGrid(x: number, y: number): boolean {
     const rect = gridEl.getBoundingClientRect();
+
     return (
       x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
     );
   }
 
   function renderSlots() {
+    console.log("renderSlots");
     slotEls.forEach((slot, i) => {
-      slot.innerHTML = "";
       const imgIdx = slots.get(i);
+
       if (imgIdx == null) {
+        slot.querySelector("img")?.removeAttribute("src");
         slot.classList.remove("has-image");
         return;
       }
-      slot.classList.add("has-image");
-      const img = gridEl.querySelector(`.tc-cell[data-index="${imgIdx}"] img`);
+
+      const img = getCellImg(imgIdx);
+
       if (img) {
-        slot.appendChild(img.cloneNode(true));
-
-        const removeBadge = document.createElement("div");
-        removeBadge.className = "tc-remove-badge";
-        removeBadge.innerHTML = "✕";
-
-        removeBadge.onclick = (e) => {
-          e.stopPropagation();
-          removeFromSlot(i);
-        };
-
-        slot.appendChild(removeBadge);
+        slot.querySelector("img")?.setAttribute("src", img.src);
+        slot.classList.add("has-image");
+        return;
       }
     });
   }
 
-  async function swapSlots(srcIdx: number, destIdx: number) {
-    const imgInSrc = slots.get(srcIdx); // 드래그 중인 이미지 (activeImageIndex와 동일)
-    const imgInDest = slots.get(destIdx); // 타겟 슬롯에 원래 있던 이미지
-    if (!imgInSrc) return;
+  function renderGridUsage() {
+    // 사용 중 상태 동기화 (슬롯에 있으면 사용 중)
+    getCells().forEach((cell) => {
+      const imgIdx = Number(cell.dataset.index);
 
-    if (imgInDest === null) {
-      // 타겟이 비어있으면 그냥 이동
-      slots.set(destIdx, imgInSrc);
-      slots.clear(srcIdx);
-    } else {
-      // [교체 핵심] 타겟 이미지를 시작 슬롯으로 날려보냄
-      const srcSlotEl = slotEls[srcIdx];
-      const destSlotEl = slotEls[destIdx];
-
-      slots.set(destIdx, imgInSrc);
-      slots.clear(srcIdx);
-      renderSlots();
-      slots.set(srcIdx, imgInDest);
-
-      // 타겟 슬롯의 이미지가 원래 내 자리(src)로 날아가는 비행 연출
-      await ghost.triggerFlight(
-        destSlotEl.getBoundingClientRect(),
-        srcSlotEl.getBoundingClientRect(),
-        imgInDest,
-        false,
-      );
-    }
-    renderSlots();
+      cell.classList.toggle("is-used", slots.includes(imgIdx));
+    });
   }
 
-  function removeFromSlot(slotIndex: number) {
+  async function dropIntoSlot(slotIndex: number, imageIndex: number) {
+    console.log("dropIntoSlot", slotIndex, imageIndex);
+    const prevImageIndex = slots.get(slotIndex);
+
+    // 이미 같은 이미지가 들어가 있다면 무시
+    if (prevImageIndex === imageIndex) return;
+
+    // 새로운 이미지를 슬롯에 안착
+    slots.set(slotIndex, imageIndex);
+
+    renderSlots();
+
+    // [밀어내기 로직] 슬롯에 이미 이미지가 있는 경우
+    if (prevImageIndex !== null) {
+      const prevCell = getCell(prevImageIndex);
+      const prevImg = getCellImg(prevImageIndex);
+
+      const nowCell = getCell(imageIndex);
+
+      if (nowCell) {
+        nowCell.classList.add("is-used");
+      }
+
+      if (prevCell && prevImg) {
+        // 슬롯에 있던 이미지를 그리드의 원래 칸으로 날려보냄
+        await ghost.triggerFlight(
+          slotEls[slotIndex].getBoundingClientRect(),
+          prevCell.getBoundingClientRect(),
+          prevImg,
+          true,
+        );
+      }
+    }
+
+    renderSlots();
+    renderGridUsage();
+    verifyCompletion();
+  }
+
+  async function dropOutOfSlot(slotIndex: number) {
+    console.log("dropOutOfSlot", slotIndex);
     const imageIndex = slots.get(slotIndex);
     if (imageIndex === null) return;
-    const cellEl = gridEl.querySelector(
-      `.tc-cell[data-index="${imageIndex}"]`,
-    ) as HTMLElement;
 
-    ghost
-      .triggerFlight(
-        slotEls[slotIndex].getBoundingClientRect(),
-        cellEl.getBoundingClientRect(),
-        imageIndex,
-        true,
-      )
-      .then(() => {
-        syncGridState();
-      });
-    slots.set(slotIndex, null);
+    const cell = getCell(imageIndex);
+    const img = getCellImg(imageIndex);
+
+    if (!cell || !img) return;
+
+    slots.clear(slotIndex);
     renderSlots();
+
+    await ghost.triggerFlight(
+      slotEls[slotIndex].getBoundingClientRect(),
+      cell.getBoundingClientRect(),
+      img,
+      true,
+    );
+
+    renderSlots();
+    renderGridUsage();
   }
 
-  function cleanupPointer() {
+  async function swapSlots(srcIdx: number, destIdx: number) {
+    console.log("swapSlots", srcIdx, destIdx);
+    const imgInSrcIndex = slots.get(srcIdx);
+    const imgInDestIndex = slots.get(destIdx);
+
+    if (imgInSrcIndex === null) return;
+
+    slots.set(destIdx, imgInSrcIndex);
+    slots.clear(srcIdx);
+    renderSlots();
+
+    if (imgInDestIndex === null) return;
+
+    const img = getCellImg(imgInDestIndex);
+
+    if (img) {
+      slots.set(srcIdx, imgInDestIndex);
+
+      await ghost.triggerFlight(
+        slotEls[destIdx].getBoundingClientRect(),
+        slotEls[srcIdx].getBoundingClientRect(),
+        img,
+        false,
+      );
+
+      renderSlots();
+    }
+  }
+
+  async function snapBack(
+    imageIndex: number,
+    flightTo: HTMLElement,
+    isToGrid: boolean,
+  ) {
+    console.log("snapBack", imageIndex, flightTo, isToGrid);
+    const ghostRect = ghost.getRect();
+    const img = getCellImg(imageIndex);
+
+    if (!ghostRect || flightTo === null || !img) return;
+
+    ghost.remove();
+
+    await ghost.triggerFlight(
+      ghostRect,
+      flightTo.getBoundingClientRect(),
+      img,
+      isToGrid,
+    );
+
+    renderSlots();
+    renderGridUsage();
+  }
+
+  function beginPointerTracking(e: PointerEvent) {
+    const { viewport_p, img_p } = getEventCoords(
+      e,
+      gridEl.getBoundingClientRect(),
+    );
+
+    manager.start(viewport_p, img_p);
+    phaseRoot.setPointerCapture(e.pointerId);
+    activePointerId = e.pointerId;
+
+    phaseRoot.classList.add("is-grabbing");
+
+    console.assert(manager.isPressed === true);
+  }
+
+  function updatePointerTracking(e: PointerEvent) {
+    const { viewport_p, img_p } = getEventCoords(
+      e,
+      gridEl.getBoundingClientRect(),
+    );
+    manager.move(viewport_p, img_p);
+
+    console.assert(manager.isPressed === true);
+  }
+
+  function endPointerTracking(e: PointerEvent, isCancelled: boolean) {
+    const { viewport_p, img_p } = getEventCoords(
+      e,
+      gridEl.getBoundingClientRect(),
+    );
+
+    manager.stop(viewport_p, img_p, isCancelled ? "cancel" : "up");
+
     if (activePointerId != null) {
       try {
         phaseRoot.releasePointerCapture(activePointerId);
       } catch {}
     }
-    draggingCell?.classList.remove("is-dragging");
-    draggingCell = null;
-
-    ghost.remove();
-
-    slotEls.forEach((s) => {
-      s.classList.remove("is-hover");
-      s.classList.remove("is-dragging");
-    });
 
     activePointerId = null;
-    activeImageIndex = null;
 
-    gridEl.classList.toggle("is-drag-over", false);
+    phaseRoot.classList.remove("is-grabbing");
+
+    console.assert(manager.isPressed === false);
   }
 
-  function syncGridState() {
-    const currentImagesInSlots = slots.getFilled();
-    const allCells = gridEl.querySelectorAll(
-      ".tc-cell",
-    ) as NodeListOf<HTMLElement>;
+  function getCells(): NodeListOf<HTMLElement> {
+    return gridEl.querySelectorAll(".tc-cell");
+  }
 
-    allCells.forEach((cell) => {
-      const imgIdx = Number(cell.dataset.index);
-      const isInSlot = currentImagesInSlots.includes(imgIdx);
+  function getCell(imageIndex: number): HTMLElement | null {
+    return gridEl.querySelector(`.tc-cell[data-index="${imageIndex}"]`);
+  }
 
-      // 1. 사용 중 상태 동기화 (슬롯에 있으면 사용 중)
-      cell.classList.toggle("is-used", isInSlot);
+  function getCellImg(imageIndex: number): HTMLImageElement | null {
+    return gridEl.querySelector(`.tc-cell[data-index="${imageIndex}"] img`);
+  }
 
-      // 2. 상호작용 관련 클래스 일괄 청소
-      cell.classList.remove("is-dragging");
-    });
+  function resetInteractionState() {
+    console.log("resetInteractionState called");
+    activeImageIndex = null;
+    sourceSlotIndex = null;
+  }
+
+  function clearDragUI() {
+    console.log("clearDragUI called");
+
+    gridEl.classList.remove("is-drag-over");
+  }
+
+  function clearPickingUI() {
+    if (!manager.isPressed) {
+      slotEls.forEach((s) => {
+        s.classList.remove("is-snapping");
+      });
+      phaseRoot.querySelectorAll(".is-picking").forEach((el) => {
+        el.classList.remove("is-picking");
+      });
+      ghost.remove();
+    }
   }
 
   const onPointerUp = (e: PointerEvent) => handleEnd(e, false);
   const onLostPointerCapture = (e: PointerEvent) => handleEnd(e, true);
   const onPointerCancel = (e: PointerEvent) => handleEnd(e, true);
 
-  phaseRoot.addEventListener("pointerdown", onPointerDown);
-  phaseRoot.addEventListener("pointermove", onPointerMove);
-  phaseRoot.addEventListener("lostpointercapture", onLostPointerCapture);
-  document.addEventListener("pointerup", onPointerUp);
-  document.addEventListener("pointercancel", onPointerCancel);
+  phaseRoot.addEventListener("click", onClickRemoveBadge, {
+    signal,
+  });
+
+  phaseRoot.addEventListener("pointerdown", onPointerDown, {
+    signal,
+    passive: false,
+  });
+  phaseRoot.addEventListener("pointermove", onPointerMove, {
+    signal,
+    passive: false,
+  });
+  document.addEventListener("pointerup", onPointerUp, {
+    signal,
+  });
+  phaseRoot.addEventListener("lostpointercapture", onLostPointerCapture, {
+    signal,
+  });
+  document.addEventListener("pointercancel", onPointerCancel, {
+    signal,
+  });
 
   return () => {
-    cleanupPointer();
-    phaseRoot.removeEventListener("pointerdown", onPointerDown);
-    phaseRoot.removeEventListener("pointermove", onPointerMove);
-    phaseRoot.removeEventListener("lostpointercapture", onLostPointerCapture);
-    document.removeEventListener("pointerup", onPointerUp);
-    document.removeEventListener("pointercancel", onPointerCancel);
+    endPointerTracking(new PointerEvent("cancel"), true);
+    controller.abort();
+    ghost.remove();
+    manager.clear();
   };
 }

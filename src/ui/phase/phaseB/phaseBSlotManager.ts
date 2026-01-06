@@ -47,6 +47,10 @@ export class PhaseBSlotManager {
     return this.slots.filter((v): v is number => v !== null);
   }
 
+  includes(imageIndex: number): boolean {
+    return this.slots.includes(imageIndex);
+  }
+
   /**
    * 모든 슬롯이 찼는지 확인
    */

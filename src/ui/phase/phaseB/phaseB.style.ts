@@ -11,10 +11,6 @@ export const phaseBCss = `
   --tc-slot-bg: #e5e7eb;
   --tc-slot-drag: #d1d5db;
 
-  /* size */
-  --slot-size: 80px;
-  --ghost-size: 80px;
-
   /* opacity */
   --opacity-used: 0.3;
 
@@ -89,12 +85,12 @@ export const phaseBCss = `
   z-index: 99; 
   pointer-events: none;
   
-  box-shadow: inset 0 0 30px 5px rgba(99, 102, 241, 0.15);
-  background-color: rgba(99, 102, 241, 0.03);
+  box-shadow: inset 0 0 40px 5px rgba(125, 127, 244, 0.35);
+  background-color: rgba(99, 102, 241, 0.05);
   border-radius: 16px;
   
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tc-grid.is-drag-over::after {
@@ -116,10 +112,6 @@ export const phaseBCss = `
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
-.tc-cell:active {
-  cursor: grabbing;
-}
-
 .tc-cell img {
   width: 100%;
   height: 100%;
@@ -138,8 +130,6 @@ export const phaseBCss = `
 
 .tc-phase-b-slot {
   position: relative;
-  width: var(--slot-size);
-  height: var(--slot-size);
   aspect-ratio: 1 / 1;
   border-radius: 14px;
   background: var(--tc-slot-bg);
@@ -163,7 +153,7 @@ export const phaseBCss = `
 /* =========================================================
  * State
  * ======================================================= */
-.tc-cell.is-dragging {
+.tc-cell.is-picking {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
   opacity: 0.5;
@@ -176,42 +166,49 @@ export const phaseBCss = `
 }
 
 .tc-phase-b-slot.has-image {
-  border: none;
-  background: transparent;
-}
-
-.tc-phase-b-slot.has-image:hover {
   cursor: grab;
 }
 
-.tc-phase-b-slot.is-hover {
+.tc-phase-b-slot:not(.has-image) {
+  cursor: default;
+}
+
+.tc-phase-b-slot:not(.has-image) img {
+  display: none;
+}
+
+.tc-phase-b-slot.is-snapping {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
   background: rgba(99, 102, 241, 0.1);
 }
 
-.tc-phase-b-slot.is-dragging {
+.tc-phase-b-slot.is-picking {
   outline: 2px dashed var(--tc-slot-drag);
   outline-offset: -2px;
 }
   
-.tc-phase-b-slot.is-hover.is-dragging {
+.tc-phase-b-slot.is-snapping.is-picking {
   outline: 3px solid var(--tc-primary);
   outline-offset: -3px;
 }
   
-.tc-phase-b-slot.is-hover img {
+.tc-phase-b-slot.is-snapping img {
   opacity: 0.3;
 }
 
-.tc-phase-b-slot.is-dragging img {
+.tc-phase-b-slot.is-picking img {
   opacity: 0.6;
 }
 
-.tc-phase-b-slot.is-hover.is-dragging img {
+.tc-phase-b-slot.is-snapping.is-picking img {
   opacity: 0.3;
 }
 
+.tc-phase-root.is-grabbing {
+  cursor: grabbing;
+}
+  
 /* =========================================================
  * Effects / Animations
  * ======================================================= */
@@ -247,8 +244,6 @@ export const phaseBCss = `
 /* Drag Ghost */
 .tc-drag-ghost {
   position: absolute;
-  width: var(--ghost-size);
-  height: var(--ghost-size);
   pointer-events: none;
   z-index: 9999;
 
@@ -256,11 +251,15 @@ export const phaseBCss = `
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  
+  transform: scale(0.9);
+  transition: transform 0.15s ease;
 }
 
 .tc-drag-ghost.is-snapped {
-  transition: left 0.05s ease-out, 
-              top 0.05s ease-out;
+  transform: scale(0.85);
+  transition: left 0.02s ease-out, 
+              top 0.02s ease-out;
 }
 
 .tc-drag-ghost img {
@@ -300,5 +299,9 @@ export const phaseBCss = `
 
 .tc-phase-b-slot.has-image:hover .tc-remove-badge:hover {
   transform: scale(1.1);
+}
+
+.tc-phase-b-slot.has-image.is-snapping .tc-remove-badge {
+  opacity: 0;
 }
 `;
