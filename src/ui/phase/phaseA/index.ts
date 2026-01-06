@@ -127,7 +127,6 @@ export function renderPhaseA(
             toast.showToast("끝까지 그어주세요.");
             break;
         }
-        //shell.resetTimer();
       },
     });
 
@@ -139,8 +138,8 @@ export function renderPhaseA(
       finished = true;
 
       cleanupInput();
-      //cleanupGuide?.();
-      //cleanupCanvas();
+      cleanupGuide?.();
+      cleanupCanvas();
 
       shell.stopTimer();
       shell.root.removeEventListener("phase:timeout", onTimeout);
