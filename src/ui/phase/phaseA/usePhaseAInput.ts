@@ -45,29 +45,76 @@ export function usePhaseAInput({
 
   const onPointerDown = (e: PointerEvent) => {
     if (activePointerId !== null) return;
+
     e.preventDefault();
 
     clearAllTimeouts();
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    activePointerId = e.pointerId;
-    slot.setPointerCapture(e.pointerId);
 
-    const { viewport_p, img_p } = getEventCoords(
-      e,
-      img.getBoundingClientRect(),
-    );
-    manager.start(viewport_p, img_p);
+    manager.clear();
+
+    beginPointerTracking(e);
   };
 
   const onPointerMove = (e: PointerEvent) => {
-    if (!manager.isPressed || e.pointerId !== activePointerId) return;
+    if (e.pointerId !== activePointerId || !manager.isPressed) return;
+
     e.preventDefault();
 
+    updatePointerTracking(e);
+
+    drawStroke(ctx, manager.getCurrentSegment(), STROKE_PRESET.normal);
+  };
+
+  const handleEnd = (e: PointerEvent, isCancelled: boolean) => {
+    if (e.pointerId !== activePointerId) return;
+
+    endPointerTracking(e, isCancelled);
+
+    const result = inboundVerify();
+
+    if (result) {
+      drawStroke(
+        ctx,
+        result.currentSegment,
+        result.passed ? STROKE_PRESET.pass : STROKE_PRESET.fail,
+      );
+
+      if (result.passed) {
+        passTimeout = window.setTimeout(
+          () => onPass(result.currentSegment),
+          THEME.duration.passDraw,
+        );
+      } else {
+        onFail(result.reason);
+        failTimeout = window.setTimeout(() => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          failTimeout = null;
+        }, THEME.duration.failDraw);
+      }
+    }
+  };
+
+  function beginPointerTracking(e: PointerEvent) {
     const { viewport_p, img_p } = getEventCoords(
       e,
       img.getBoundingClientRect(),
     );
+
+    manager.start(viewport_p, img_p);
+    slot.setPointerCapture(e.pointerId);
+    activePointerId = e.pointerId;
+
+    console.assert(manager.isPressed === true);
+  }
+
+  function updatePointerTracking(e: PointerEvent) {
+    const { viewport_p, img_p } = getEventCoords(
+      e,
+      img.getBoundingClientRect(),
+    );
+
     const inside = isPointInsideGuideLine(
       img_p,
       img.getBoundingClientRect(),
@@ -76,65 +123,64 @@ export function usePhaseAInput({
 
     manager.move(viewport_p, img_p, inside ? "move" : "move_out");
 
-    drawStroke(ctx, manager.getCurrentSegment(), STROKE_PRESET.normal);
-  };
+    console.assert(manager.isPressed === true);
+  }
 
-  const handleEnd = (e: PointerEvent, isCancelled: boolean) => {
-    if (!manager.isPressed || activePointerId === null) return;
-
+  function endPointerTracking(e: PointerEvent, isCancelled: boolean) {
     const { viewport_p, img_p } = getEventCoords(
       e,
       img.getBoundingClientRect(),
     );
-    const result = manager.stop(
-      viewport_p,
-      img_p,
-      isCancelled ? "cancel" : "up",
+
+    manager.stop(viewport_p, img_p, isCancelled ? "cancel" : "up");
+
+    if (activePointerId != null) {
+      try {
+        slot.releasePointerCapture(activePointerId);
+      } catch {}
+    }
+
+    activePointerId = null;
+
+    console.assert(manager.isPressed === false);
+  }
+
+  function inboundVerify():
+    | {
+        passed: true;
+        isAlwaysInside: boolean;
+        currentSegment: RawPointerEvent[];
+      }
+    | {
+        passed: false;
+        currentSegment: RawPointerEvent[];
+        reason: "OUT_OF_GUIDE" | "TOO_SHORT";
+      }
+    | null {
+    const currentSegment = manager.getCurrentSegment();
+
+    if (currentSegment.length < 2) return null;
+
+    const isAlwaysInside = currentSegment.every(
+      (p) => p.event_type !== "move_out",
     );
 
-    if (result) {
-      const isAlwaysInside =
-        //!isCancelled &&
-        result.current.every((p) => p.event_type !== "move_out");
+    const passed =
+      isAlwaysInside &&
+      calculateProgress(
+        currentSegment,
+        img.getBoundingClientRect(),
+        guide_line,
+      ) >= (guide_line.min_progress_threshold ?? MIN_PROGRESS_THRESHOLD);
 
-      const passed =
-        isAlwaysInside &&
-        calculateProgress(
-          result.current,
-          img.getBoundingClientRect(),
-          guide_line,
-        ) >= (guide_line.min_progress_threshold ?? MIN_PROGRESS_THRESHOLD);
+    if (passed) {
+      return { passed, isAlwaysInside, currentSegment };
+    } else {
+      const reason = !isAlwaysInside ? "OUT_OF_GUIDE" : "TOO_SHORT";
 
-      drawStroke(
-        ctx,
-        result.current,
-        passed ? STROKE_PRESET.pass : STROKE_PRESET.fail,
-      );
-
-      if (passed) {
-        passTimeout = window.setTimeout(
-          () => onPass(result.current),
-          THEME.duration.passDraw,
-        );
-      } else {
-        const reason = !isAlwaysInside ? "OUT_OF_GUIDE" : "TOO_SHORT";
-
-        onFail(reason);
-        manager.clear();
-        failTimeout = window.setTimeout(() => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          failTimeout = null;
-        }, THEME.duration.failDraw);
-      }
-
-      if (activePointerId !== null) {
-        try {
-          slot.releasePointerCapture(activePointerId);
-        } catch {}
-        activePointerId = null;
-      }
+      return { passed, reason, currentSegment };
     }
-  };
+  }
 
   const onPointerUp = (e: PointerEvent) => handleEnd(e, false);
   const onLostPointerCapture = (e: PointerEvent) => handleEnd(e, true);

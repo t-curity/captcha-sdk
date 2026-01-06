@@ -43,7 +43,7 @@ export class StrokeManager {
     };
 
     this.isPressed = false;
-    this.currentSegment = null;
+
     return result;
   }
 
