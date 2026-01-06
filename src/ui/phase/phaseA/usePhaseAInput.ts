@@ -30,6 +30,9 @@ export function usePhaseAInput({
   onPass,
   onFail,
 }: PhaseAInputParams) {
+  const controller = new AbortController();
+  const { signal } = controller;
+
   const manager = new StrokeManager();
 
   let activePointerId: number | null = null;
@@ -190,20 +193,32 @@ export function usePhaseAInput({
     return false;
   };
 
-  slot.addEventListener("pointerdown", onPointerDown, { passive: false });
-  slot.addEventListener("pointermove", onPointerMove, { passive: false });
-  slot.addEventListener("dragstart", onDragStart, { passive: false });
-  slot.addEventListener("lostpointercapture", onLostPointerCapture);
-  window.addEventListener("pointerup", onPointerUp);
-  window.addEventListener("pointercancel", onPointerCancel);
+  slot.addEventListener("pointerdown", onPointerDown, {
+    signal,
+    passive: false,
+  });
+  slot.addEventListener("pointermove", onPointerMove, {
+    signal,
+    passive: false,
+  });
+  slot.addEventListener("dragstart", onDragStart, {
+    signal,
+    passive: false,
+  });
+  slot.addEventListener("lostpointercapture", onLostPointerCapture, {
+    signal,
+  });
+  window.addEventListener("pointerup", onPointerUp, {
+    signal,
+  });
+  window.addEventListener("pointercancel", onPointerCancel, {
+    signal,
+  });
 
   return () => {
+    endPointerTracking(new PointerEvent("cancel"), true);
     clearAllTimeouts();
-    slot.removeEventListener("pointerdown", onPointerDown);
-    slot.removeEventListener("pointermove", onPointerMove);
-    slot.removeEventListener("dragstart", onDragStart);
-    slot.removeEventListener("lostpointercapture", onLostPointerCapture);
-    window.removeEventListener("pointerup", onPointerUp);
-    window.removeEventListener("pointercancel", onPointerCancel);
+    controller.abort();
+    manager.clear();
   };
 }
