@@ -6,6 +6,7 @@ import { PhaseBGhostManager } from "./phaseBGhostManager";
 import { PhaseBSlotManager } from "./phaseBSlotManager";
 import { sleep } from "@/utils/sleep";
 import { DRAG_THRESHOLD } from "./phaseB.constants";
+import { createDragUI } from "./phaseBDragUI";
 
 type PhaseBInputParams = {
   gridEl: HTMLDivElement;
@@ -29,8 +30,15 @@ export function usePhaseBInput({
   const manager = new StrokeManager();
   const ghost = new PhaseBGhostManager(phaseRoot);
   const slots = new PhaseBSlotManager(slotEls.length);
+  const dragUI = createDragUI({
+    phaseRoot,
+    gridEl,
+    slotEls,
+    ghost,
+  });
 
   let activePointerId: number | null = null;
+  let dragSessionId: number = 0;
 
   let activeImageIndex: number | null = null;
   let sourceSlotIndex: number | null = null;
@@ -68,11 +76,8 @@ export function usePhaseBInput({
       sourceSlotIndex = slotIdx;
     }
 
-    ghost.remove();
-    phaseRoot.querySelectorAll(".is-picking").forEach((el) => {
-      el.classList.remove("is-picking");
-    });
-    targetEl.classList.add("is-picking");
+    dragUI.removeGhost();
+    dragUI.startPicking(targetEl);
 
     beginPointerTracking(e);
   }
@@ -97,30 +102,23 @@ export function usePhaseBInput({
 
       if (dist <= DRAG_THRESHOLD || activeImageIndex === null) return;
 
-      ghost.create(slotEls[0].getBoundingClientRect());
+      const rect = slotEls[0].getBoundingClientRect();
       const img = getCellImg(activeImageIndex);
 
-      if (!img) return;
+      if (!rect || !img) return;
 
-      ghost.setImage(img);
+      dragUI.attachGhost(rect, img);
     }
 
-    ghost.move(e);
+    dragUI.moveGhost(e);
 
     const slot = findSlotByPoint(e.clientX, e.clientY);
 
-    slotEls.forEach((s) => s.classList.toggle("is-snapping", s === slot));
+    dragUI.updateSnapping(slot);
 
-    // 자석 효과
-    if (slot) {
-      ghost.addClass("is-snapped");
-      ghost.moveTo(slot.getBoundingClientRect());
-    } else {
-      ghost.removeClass("is-snapped");
-    }
+    dragUI.snapGhostTo(slot?.getBoundingClientRect() ?? null);
 
-    gridEl.classList.toggle(
-      "is-drag-over",
+    dragUI.updateDragOver(
       isOverGrid(e.clientX, e.clientY) && sourceSlotIndex !== null,
     );
   }
@@ -129,9 +127,11 @@ export function usePhaseBInput({
     console.log("handleEnd called", e, isCancelled);
     if (e.pointerId !== activePointerId) return;
 
+    const mySession = dragSessionId;
+
     try {
       endPointerTracking(e, isCancelled);
-      clearDragUI();
+      dragUI.clearImmediate();
 
       if (isCancelled || activeImageIndex === null) return;
 
@@ -175,7 +175,8 @@ export function usePhaseBInput({
         await dropOutOfSlot(sourceSlotIndex);
       }
     } finally {
-      clearPickingUI();
+      if (mySession !== dragSessionId) return;
+      dragUI.clearAfterAction();
     }
   }
 
@@ -368,7 +369,7 @@ export function usePhaseBInput({
 
     if (!ghostRect || flightTo === null || !img) return;
 
-    ghost.remove();
+    dragUI.removeGhost();
 
     await ghost.triggerFlight(
       ghostRect,
@@ -390,8 +391,9 @@ export function usePhaseBInput({
     manager.start(viewport_p, img_p);
     phaseRoot.setPointerCapture(e.pointerId);
     activePointerId = e.pointerId;
+    dragSessionId++;
 
-    phaseRoot.classList.add("is-grabbing");
+    dragUI.setGrabbing(true);
 
     console.assert(manager.isPressed === true);
   }
@@ -422,7 +424,7 @@ export function usePhaseBInput({
 
     activePointerId = null;
 
-    phaseRoot.classList.remove("is-grabbing");
+    dragUI.setGrabbing(false);
 
     console.assert(manager.isPressed === false);
   }
@@ -437,30 +439,6 @@ export function usePhaseBInput({
 
   function getCellImg(imageIndex: number): HTMLImageElement | null {
     return gridEl.querySelector(`.tc-cell[data-index="${imageIndex}"] img`);
-  }
-
-  function resetInteractionState() {
-    console.log("resetInteractionState called");
-    activeImageIndex = null;
-    sourceSlotIndex = null;
-  }
-
-  function clearDragUI() {
-    console.log("clearDragUI called");
-
-    gridEl.classList.remove("is-drag-over");
-  }
-
-  function clearPickingUI() {
-    if (!manager.isPressed) {
-      slotEls.forEach((s) => {
-        s.classList.remove("is-snapping");
-      });
-      phaseRoot.querySelectorAll(".is-picking").forEach((el) => {
-        el.classList.remove("is-picking");
-      });
-      ghost.remove();
-    }
   }
 
   const onPointerUp = (e: PointerEvent) => handleEnd(e, false);
@@ -490,9 +468,8 @@ export function usePhaseBInput({
   });
 
   return () => {
-    endPointerTracking(new PointerEvent("cancel"), true);
     controller.abort();
-    ghost.remove();
+    dragUI.removeGhost();
     manager.clear();
   };
 }
