@@ -41,7 +41,7 @@ export function usePhaseBInput({
   );
 
   let activePointerId: number | null = null;
-  let dragSessionId: number = 0;
+  let interactionId: number = 0;
 
   let activeImageIndex: number | null = null;
   let sourceSlotIndex: number | null = null;
@@ -127,7 +127,7 @@ export function usePhaseBInput({
   async function handleEnd(e: PointerEvent, isCancelled: boolean) {
     if (e.pointerId !== activePointerId) return;
 
-    const mySession = dragSessionId;
+    const mySession = interactionId;
 
     try {
       endPointerTracking(e, isCancelled);
@@ -140,14 +140,15 @@ export function usePhaseBInput({
 
         if (target.type === "SLOT") {
           // to slot
-          const targetSlotIndex = Number(target.el.dataset.slot);
-
-          if (sourceSlotIndex !== null && sourceSlotIndex !== targetSlotIndex) {
+          if (
+            sourceSlotIndex !== null &&
+            sourceSlotIndex !== target.slotIndex
+          ) {
             // from slot: 슬롯 간 교체
-            await action.swapSlots(sourceSlotIndex, targetSlotIndex);
+            await action.swapSlots(sourceSlotIndex, target.slotIndex);
           } else {
             // from grid: 이미지 등록
-            await action.dropIntoSlot(targetSlotIndex, activeImageIndex);
+            await action.dropIntoSlot(target.slotIndex, activeImageIndex);
           }
         } else if (target.type === "GRID" && sourceSlotIndex !== null) {
           // to grid from slot: 이미지 제거
@@ -172,7 +173,7 @@ export function usePhaseBInput({
         await action.dropOutOfSlot(sourceSlotIndex);
       }
     } finally {
-      if (mySession !== dragSessionId) return;
+      if (mySession !== interactionId) return;
       dragUI.clearAfterAction();
     }
   }
@@ -194,13 +195,13 @@ export function usePhaseBInput({
     x: number,
     y: number,
   ):
-    | { type: "SLOT"; el: HTMLElement }
+    | { type: "SLOT"; slotIndex: number }
     | { type: "GRID" }
     | { type: "NOWHERE" } {
-    const targetSlot = findSlotByPoint(x, y);
+    const slot = findSlotByPoint(x, y);
 
-    if (targetSlot) {
-      return { type: "SLOT", el: targetSlot };
+    if (slot) {
+      return { type: "SLOT", slotIndex: Number(slot.dataset.slot) };
     } else if (isOverGrid(x, y)) {
       return { type: "GRID" };
     }
@@ -209,20 +210,19 @@ export function usePhaseBInput({
   }
 
   function findSlotByPoint(x: number, y: number): HTMLElement | null {
-    return (
-      slotEls.find((slot) => {
-        const rect = slot.getBoundingClientRect();
+    for (const slot of slotEls) {
+      const rect = slot.getBoundingClientRect();
 
-        if (
-          x >= rect.left &&
-          x <= rect.right &&
-          y >= rect.top &&
-          y <= rect.bottom
-        ) {
-          return slot as HTMLElement;
-        }
-      }) ?? null
-    );
+      if (
+        x >= rect.left &&
+        x <= rect.right &&
+        y >= rect.top &&
+        y <= rect.bottom
+      ) {
+        return slot;
+      }
+    }
+    return null;
   }
 
   function isOverGrid(x: number, y: number): boolean {
@@ -253,7 +253,7 @@ export function usePhaseBInput({
     manager.start(viewport_p, img_p);
     phaseRoot.setPointerCapture(e.pointerId);
     activePointerId = e.pointerId;
-    dragSessionId++;
+    interactionId++;
 
     dragUI.setGrabbing(true);
 
