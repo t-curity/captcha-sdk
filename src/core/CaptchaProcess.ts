@@ -116,7 +116,7 @@ export class CaptchaProcess {
     shell.startTimer();
 
     let { result, asyncAnim } = await renderPhaseA(problem, shell, {
-      debugGuideLine: true,
+      debugGuideLine: false,
     });
 
     if (result.cancelled) {
@@ -172,7 +172,7 @@ export class CaptchaProcess {
     shell.startTimer();
 
     let result = await renderPhaseB(problem, shell, {
-      debugGuideLine: true,
+      debugGuideLine: false,
     });
     console.log("result", result);
 
