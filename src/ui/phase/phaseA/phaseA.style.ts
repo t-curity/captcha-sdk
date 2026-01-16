@@ -7,7 +7,7 @@ export const phaseACss = `
 .tc-phase-a-slot {
   position: relative;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12);
 
   touch-action: none;
