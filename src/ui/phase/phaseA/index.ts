@@ -16,7 +16,7 @@ export function renderPhaseA(
 ): Promise<{ result: PhaseAResult; asyncAnim: () => Promise<void> }> {
   return new Promise((resolve) => {
     // Dom
-    const { container, slot } = createPhaseADOM(guide_text);
+    const { container, slot, dragHandle } = createPhaseADOM(guide_text);
     shell.mount(container);
 
     // Style
@@ -34,9 +34,23 @@ export function renderPhaseA(
       cleanup: cleanupCanvas,
     } = setupImageCanvas(slot, image);
 
+    // 드래그 핸들 위치 설정
+    const positionDragHandle = () => {
+      const rect = getImageLocalRect();
+      const [startX, startY] = guide_line.start;
+      
+      dragHandle.style.left = `${startX * rect.width}px`;
+      dragHandle.style.top = `${startY * rect.height}px`;
+    };
+
+    onReady(positionDragHandle);
+
     const playSplitAnimation = async () => {
       const rect = img.getBoundingClientRect();
       const stage = getOverlayStage();
+
+      // 애니메이션 시작 전 핸들 숨기기
+      dragHandle.style.display = 'none';
 
       const leftHalf = img.cloneNode() as HTMLImageElement;
       const rightHalf = img.cloneNode() as HTMLImageElement;
@@ -113,12 +127,17 @@ export function renderPhaseA(
       canvas,
       ctx,
       guide_line,
+      dragHandle,
       onPass: (points) => {
         shell.stopTimer();
         finish({ cancelled: false, raw_points: points });
       },
       onFail: (reason) => {
         console.log(reason);
+        // 실패 시 핸들 원위치
+        positionDragHandle();
+        dragHandle.classList.remove('dragging');
+        
         switch (reason) {
           case "OUT_OF_GUIDE":
             toast.showToast("영역을 벗어났습니다.");

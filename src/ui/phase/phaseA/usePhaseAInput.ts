@@ -17,6 +17,7 @@ type PhaseAInputParams = {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   guide_line: GuideLine;
+  dragHandle: HTMLElement;
   onPass: (points: RawPointerEvent[]) => void;
   onFail: (reason: "OUT_OF_GUIDE" | "TOO_SHORT") => void;
 };
@@ -27,6 +28,7 @@ export function usePhaseAInput({
   canvas,
   ctx,
   guide_line,
+  dragHandle,
   onPass,
   onFail,
 }: PhaseAInputParams) {
@@ -46,6 +48,16 @@ export function usePhaseAInput({
     passTimeout = failTimeout = null;
   };
 
+  // 드래그 핸들 위치 업데이트
+  const updateHandlePosition = (clientX: number, clientY: number) => {
+    const slotRect = slot.getBoundingClientRect();
+    const x = clientX - slotRect.left;
+    const y = clientY - slotRect.top;
+    
+    dragHandle.style.left = `${x}px`;
+    dragHandle.style.top = `${y}px`;
+  };
+
   const onPointerDown = (e: PointerEvent) => {
     if (activePointerId !== null) return;
 
@@ -57,6 +69,9 @@ export function usePhaseAInput({
 
     manager.clear();
 
+    dragHandle.classList.add('dragging');
+    updateHandlePosition(e.clientX, e.clientY);
+
     beginPointerTracking(e);
   };
 
@@ -66,6 +81,7 @@ export function usePhaseAInput({
     e.preventDefault();
 
     updatePointerTracking(e);
+    updateHandlePosition(e.clientX, e.clientY);
 
     drawStroke(ctx, manager.getCurrentSegment(), STROKE_PRESET.normal);
   };
@@ -85,17 +101,22 @@ export function usePhaseAInput({
       );
 
       if (result.passed) {
+        // 성공 시 핸들 숨기기
+        dragHandle.style.display = 'none';
         passTimeout = window.setTimeout(
           () => onPass(result.currentSegment),
           THEME.duration.passDraw,
         );
       } else {
+        dragHandle.classList.remove('dragging');
         onFail(result.reason);
         failTimeout = window.setTimeout(() => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           failTimeout = null;
         }, THEME.duration.failDraw);
       }
+    } else {
+      dragHandle.classList.remove('dragging');
     }
   };
 

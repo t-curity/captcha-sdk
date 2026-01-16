@@ -24,6 +24,83 @@ export const phaseACss = `
   user-select: none;
 }
 
+/* 드래그 핸들 */
+.tc-drag-handle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 
+              0 0 0 2px rgba(255, 255, 255, 0.8),
+              inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 100;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+}
+
+.tc-drag-handle:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 
+              0 0 0 2px rgba(255, 255, 255, 0.9),
+              inset 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+.tc-drag-handle:active,
+.tc-drag-handle.dragging {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 
+              0 0 0 2px rgba(255, 255, 255, 0.8),
+              inset 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+.tc-drag-handle-icon {
+  width: 20px;
+  height: 20px;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tc-drag-handle-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* 드래그 핸들 펄스 애니메이션 */
+.tc-drag-handle::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.25);
+  animation: tc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tc-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.tc-drag-handle.dragging::before {
+  animation: none;
+  opacity: 0;
+}
+
 /* 쪼개지는 파편 공통 스타일 */
 .tc-split-half {
   position: fixed;
