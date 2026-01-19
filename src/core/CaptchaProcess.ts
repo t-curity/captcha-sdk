@@ -151,7 +151,7 @@ export class CaptchaProcess {
           this.toast?.showToast("다시 시도해주세요.");
           break;
         case "PHASE_B":
-          asyncAnim();
+          await asyncAnim();
           break;
       }
     }

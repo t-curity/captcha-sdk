@@ -100,11 +100,15 @@ export function renderPhaseA(
         });
       });
 
-      setTimeout(() => {
-        leftHalf.remove();
-        rightHalf.remove();
-        stage.classList.remove("is-splitting");
-      }, 700);
+      // 애니메이션 완료까지 대기
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          leftHalf.remove();
+          rightHalf.remove();
+          stage.classList.remove("is-splitting");
+          resolve();
+        }, 700);
+      });
     };
 
     const onTimeout = () => finish({ cancelled: true, reason: "TIMEOUT" });
