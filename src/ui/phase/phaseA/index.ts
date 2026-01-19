@@ -8,6 +8,7 @@ import { usePhaseAInput } from "./usePhaseAInput";
 import { phaseBaseShell } from "@/ui/shell";
 import { getOrCreateToast } from "@/ui/toast";
 import { getOverlayStage } from "@/ui/overlay/overlay.dom";
+import { createDeviceMetadata } from "@/utils/device-metadata";
 
 export function renderPhaseA(
   { guide_line, guide_text, image, phase, time_limit }: PhaseAProblem,
@@ -124,6 +125,9 @@ export function renderPhaseA(
       });
     }
 
+    // 디바이스 타입 감지
+    const { deviceType } = createDeviceMetadata();
+
     // Clean
     const cleanupInput = usePhaseAInput({
       slot,
@@ -132,6 +136,7 @@ export function renderPhaseA(
       ctx,
       guide_line,
       dragHandle,
+      deviceType,
       onPass: (points) => {
         shell.stopTimer();
         finish({ cancelled: false, raw_points: points });

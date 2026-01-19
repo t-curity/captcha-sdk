@@ -9,7 +9,12 @@ import {
   calculateProgress,
   isPointInsideGuideLine,
 } from "@/utils/guideLineMath";
-import { MIN_PROGRESS_THRESHOLD } from "./phaseA.constants";
+import { 
+  MIN_PROGRESS_THRESHOLD,
+  MAX_OUT_RATIO_PC,
+  MAX_OUT_RATIO_MOBILE,
+} from "./phaseA.constants";
+import { DeviceType } from "@/types/contracts/protocol";
 
 type PhaseAInputParams = {
   slot: HTMLElement;
@@ -18,6 +23,7 @@ type PhaseAInputParams = {
   ctx: CanvasRenderingContext2D;
   guide_line: GuideLine;
   dragHandle: HTMLElement;
+  deviceType: DeviceType;
   onPass: (points: RawPointerEvent[]) => void;
   onFail: (reason: "OUT_OF_GUIDE" | "TOO_SHORT") => void;
 };
@@ -29,6 +35,7 @@ export function usePhaseAInput({
   ctx,
   guide_line,
   dragHandle,
+  deviceType,
   onPass,
   onFail,
 }: PhaseAInputParams) {
@@ -172,7 +179,7 @@ export function usePhaseAInput({
   function inboundVerify():
     | {
         passed: true;
-        isAlwaysInside: boolean;
+        isAcceptable: boolean;
         currentSegment: RawPointerEvent[];
       }
     | {
@@ -185,12 +192,14 @@ export function usePhaseAInput({
 
     if (currentSegment.length < 2) return null;
 
-    const isAlwaysInside = currentSegment.every(
-      (p) => p.event_type !== "move_out",
-    );
+    // 디바이스별 이탈 허용 비율 적용
+    const maxOutRatio = deviceType === "PC" ? MAX_OUT_RATIO_PC : MAX_OUT_RATIO_MOBILE;
+    const outCount = currentSegment.filter(p => p.event_type === "move_out").length;
+    const outRatio = outCount / currentSegment.length;
+    const isAcceptable = outRatio <= maxOutRatio;
 
     const passed =
-      isAlwaysInside &&
+      isAcceptable &&
       calculateProgress(
         currentSegment,
         img.getBoundingClientRect(),
@@ -198,9 +207,9 @@ export function usePhaseAInput({
       ) >= (guide_line.min_progress_threshold ?? MIN_PROGRESS_THRESHOLD);
 
     if (passed) {
-      return { passed, isAlwaysInside, currentSegment };
+      return { passed, isAcceptable, currentSegment };
     } else {
-      const reason = !isAlwaysInside ? "OUT_OF_GUIDE" : "TOO_SHORT";
+      const reason = !isAcceptable ? "OUT_OF_GUIDE" : "TOO_SHORT";
 
       return { passed, reason, currentSegment };
     }
