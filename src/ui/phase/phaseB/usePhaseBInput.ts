@@ -45,6 +45,7 @@ export function usePhaseBInput({
 
   let activeImageIndex: number | null = null;
   let sourceSlotIndex: number | null = null;
+  let lastSnappedSlot: HTMLElement | null = null; // 마지막으로 스냅된 슬롯 추적
 
   if (!phaseRoot) {
     throw new Error("Phase root not found");
@@ -116,6 +117,7 @@ export function usePhaseBInput({
     dragUI.moveGhost(e);
 
     const slot = findSlotByPoint(e.clientX, e.clientY);
+    lastSnappedSlot = slot; // 스냅된 슬롯 기억
 
     dragUI.updateSnapping(slot);
     dragUI.snapGhostTo(slot?.getBoundingClientRect() ?? null);
@@ -136,7 +138,11 @@ export function usePhaseBInput({
       if (isCancelled || activeImageIndex === null) return;
 
       if (ghost.hasGhost()) {
-        const target = findDropTargetByPoint(e.clientX, e.clientY);
+        // 스냅된 슬롯이 있으면 우선 사용, 없으면 마우스 위치로 찾기
+        const targetSlot = lastSnappedSlot ?? findSlotByPoint(e.clientX, e.clientY);
+        const target = targetSlot 
+          ? { type: "SLOT" as const, slotIndex: Number(targetSlot.dataset.slot) }
+          : findDropTargetByPoint(e.clientX, e.clientY);
 
         if (target.type === "SLOT") {
           // to slot
@@ -174,6 +180,7 @@ export function usePhaseBInput({
       }
     } finally {
       if (mySession !== interactionId) return;
+      lastSnappedSlot = null; // 스냅 상태 초기화
       dragUI.clearAfterAction();
     }
   }
@@ -210,14 +217,16 @@ export function usePhaseBInput({
   }
 
   function findSlotByPoint(x: number, y: number): HTMLElement | null {
+    const hitPadding = 10; // 히트 영역 확장
+    
     for (const slot of slotEls) {
       const rect = slot.getBoundingClientRect();
 
       if (
-        x >= rect.left &&
-        x <= rect.right &&
-        y >= rect.top &&
-        y <= rect.bottom
+        x >= rect.left - hitPadding &&
+        x <= rect.right + hitPadding &&
+        y >= rect.top - hitPadding &&
+        y <= rect.bottom + hitPadding
       ) {
         return slot;
       }
