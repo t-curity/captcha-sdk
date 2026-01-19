@@ -162,14 +162,19 @@ export function renderPhaseA(
 
       cleanupInput();
       cleanupGuide?.();
-      cleanupCanvas();
+      // cleanupCanvas는 asyncAnim 후에 호출되도록 지연
 
       shell.stopTimer();
       shell.root.removeEventListener("phase:timeout", onTimeout);
 
       console.log("finish", result);
 
-      resolve({ result, asyncAnim: playSplitAnimation });
+      const asyncAnimWithCleanup = async () => {
+        await playSplitAnimation();
+        cleanupCanvas();
+      };
+
+      resolve({ result, asyncAnim: asyncAnimWithCleanup });
     }
   });
 }

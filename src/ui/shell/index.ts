@@ -105,6 +105,7 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
       if (!body) return;
       body.innerHTML = "";
       body.appendChild(content);
+      body.style.visibility = "visible";
     },
     mountLoading: (el: HTMLElement) => {
       console.log("mountLoading", el);
@@ -162,6 +163,8 @@ export function getOrCreateShell(options?: ShellOptions): phaseBaseShell {
       root.appendChild(dom.root);
 
       body = dom.body;
+      // 컨텐츠 mount 전까지 body 숨김
+      body.style.visibility = "hidden";
       setPhasePercents = dom.setPhasePercents;
       dom.closeBtn.onclick = () => onAbort("CANCEL");
 

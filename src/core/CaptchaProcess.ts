@@ -152,6 +152,8 @@ export class CaptchaProcess {
           break;
         case "PHASE_B":
           await asyncAnim();
+          // Phase B 전환 전 기존 Phase A UI 숨기기
+          shell.body.innerHTML = "";
           break;
       }
     }
