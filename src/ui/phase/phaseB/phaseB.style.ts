@@ -61,8 +61,8 @@ export const phaseBCss = `
 .tc-target-class {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #6366f1;
-  margin-bottom: 8px;
+  color: #011142;
+  margin-bottom: 12px;
 }
 
 .tc-instruction {

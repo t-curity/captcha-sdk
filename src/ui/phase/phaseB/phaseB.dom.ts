@@ -2,7 +2,7 @@ import { ImageGrid } from "@/types/contracts/primitives";
 import { phaseBHtml } from "./phaseB.template";
 
 export function createPhaseBDOM(
-  question: string,
+  targetClass: string,
   grid: ImageGrid,
   slotCount: number = 4,
 ) {
@@ -22,10 +22,10 @@ export function createPhaseBDOM(
     throw new Error("phaseB DOM structure mismatch");
   }
 
-  // Question - target_class만 표시 (instruction은 템플릿에 고정)
+  // target_class 표시 (instruction은 템플릿에 고정)
   const targetClassEl = container.querySelector(".tc-target-class") as HTMLDivElement;
   if (targetClassEl) {
-    targetClassEl.textContent = question;
+    targetClassEl.textContent = targetClass;
   }
 
   // Grid

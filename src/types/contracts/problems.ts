@@ -23,7 +23,7 @@ export type PhaseAProblem = {
 } & Problem;
 
 export type PhaseBProblem = {
-  question: Message;
+  instruction?: string;
   display_class?: string;
   grid: ImageGrid;
 } & Problem;
