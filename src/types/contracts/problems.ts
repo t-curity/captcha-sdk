@@ -24,5 +24,6 @@ export type PhaseAProblem = {
 
 export type PhaseBProblem = {
   question: Message;
+  display_class?: string;
   grid: ImageGrid;
 } & Problem;

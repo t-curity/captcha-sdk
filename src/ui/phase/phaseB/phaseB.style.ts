@@ -55,10 +55,20 @@ export const phaseBCss = `
 
 .tc-question {
   text-align: center;
-  font-size: 16px;
   margin: 0 0 20px;
-  font-weight: 600;
-  color: #111827;
+}
+
+.tc-target-class {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #6366f1;
+  margin-bottom: 8px;
+}
+
+.tc-instruction {
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1.5;
 }
 
 .tc-question strong {

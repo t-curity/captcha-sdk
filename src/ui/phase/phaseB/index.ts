@@ -9,16 +9,17 @@ import { phaseBaseShell } from "@/ui/shell";
 const MAX_ANSWER = 4;
 
 export function renderPhaseB(
-  { question, grid, phase, time_limit }: PhaseBProblem,
+  { question, display_class, grid, phase, time_limit }: PhaseBProblem,
   shell: phaseBaseShell,
   PhaseAOptions: { debugGuideLine?: boolean } = {},
 ): Promise<PhaseBResult> {
   return new Promise((resolve) => {
     console.log("renderPhaseB");
 
-    // Dom
+    // Dom - display_class가 있으면 사용, 없으면 question 사용 (하위 호환)
+    const targetClass = display_class || question;
     const { container, gridEl, slotEls } = createPhaseBDOM(
-      question,
+      targetClass,
       grid,
       MAX_ANSWER,
     );

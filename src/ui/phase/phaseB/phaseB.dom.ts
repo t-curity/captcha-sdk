@@ -22,8 +22,11 @@ export function createPhaseBDOM(
     throw new Error("phaseB DOM structure mismatch");
   }
 
-  // Question
-  questionEl.textContent = question;
+  // Question - target_class만 표시 (instruction은 템플릿에 고정)
+  const targetClassEl = container.querySelector(".tc-target-class") as HTMLDivElement;
+  if (targetClassEl) {
+    targetClassEl.textContent = question;
+  }
 
   // Grid
   grid.forEach((item, idx) => {
